@@ -1,26 +1,95 @@
 @import "tailwindcss";
+@import "./site.css";
+@import "./patient-dashboard.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --cream: #f6f4ec;
+  --cream-deep: #eeebdf;
+  --sage: #7c9a83;
+  --sage-soft: #dce5da;
+  --sage-deep: #3d5c48;
+  --forest: #2c4636;
+  --charcoal: #2b302c;
+  --muted: #6a7169;
+  --white: #fdfcf9;
+  --amber: #b5843a;
+  --rose: #b06a5e;
+  --radius: 20px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-cream: var(--cream);
+  --color-cream-deep: var(--cream-deep);
+  --color-sage: var(--sage);
+  --color-sage-soft: var(--sage-soft);
+  --color-sage-deep: var(--sage-deep);
+  --color-forest: var(--forest);
+  --color-charcoal: var(--charcoal);
+  --color-muted: var(--muted);
+  --color-surface: var(--white);
+  --color-amber: var(--amber);
+  --color-rose: var(--rose);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --radius-brand: var(--radius);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--cream);
+  color: var(--charcoal);
+  font-family: var(--font-sans);
+  line-height: 1.65;
+  font-size: 16.5px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-serif {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.35s ease;
+}
+
+.animate-spin-slow {
+  animation: spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none;
+  }
+
+  .animate-spin-slow {
+    animation: none;
+  }
 }

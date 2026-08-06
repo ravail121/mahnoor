@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — Dr. Mahnoor Irshad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,0,600;9..144,1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F6F4EC;--cream-deep:#EEEBDF;--sage:#7C9A83;--sage-soft:#DCE5DA;
+    --sage-deep:#3D5C48;--forest:#2C4636;--charcoal:#2B302C;--muted:#6A7169;
+    --white:#FDFCF9;--radius:20px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--charcoal);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:500;line-height:1.2;}
+  a{text-decoration:none;color:inherit;}
+
+  /* split layout */
+  .auth-wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;}
+
+  /* LEFT — brand panel */
+  .brand-panel{
+    background:linear-gradient(160deg,var(--sage-deep),var(--forest));
+    color:var(--cream);padding:56px 48px;display:flex;flex-direction:column;
+    justify-content:space-between;position:relative;overflow:hidden;
+  }
+  .brand-panel .ring{position:absolute;border-radius:50%;border:1.5px solid rgba(246,244,236,.14);}
+  .r1{width:340px;height:340px;bottom:-120px;right:-80px;}
+  .r2{width:240px;height:240px;bottom:-60px;right:-20px;border-color:rgba(246,244,236,.2)!important;}
+  .brand-top{display:flex;align-items:center;gap:12px;position:relative;z-index:2;}
+  .brand-mark{width:42px;height:42px;border-radius:12px 12px 12px 4px;background:var(--cream);color:var(--forest);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:19px;}
+  .brand-top strong{font-family:'Fraunces',serif;font-size:17px;display:block;}
+  .brand-top span{font-size:11.5px;opacity:.8;letter-spacing:.05em;}
+  .brand-mid{position:relative;z-index:2;}
+  .brand-mid h2{font-size:30px;margin-bottom:16px;max-width:14ch;}
+  .brand-mid p{opacity:.85;max-width:34ch;font-size:15px;}
+  .brand-quote{position:relative;z-index:2;font-size:13px;opacity:.7;display:flex;align-items:center;gap:8px;}
+
+  /* RIGHT — form panel */
+  .form-panel{display:flex;align-items:center;justify-content:center;padding:48px 40px;}
+  .form-box{width:100%;max-width:400px;}
+  .form-box .back-home{font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;margin-bottom:32px;}
+  .form-box .back-home:hover{color:var(--forest);}
+  .form-head{margin-bottom:28px;}
+  .form-head h1{font-size:28px;color:var(--forest);margin-bottom:8px;}
+  .form-head p{color:var(--muted);font-size:14.5px;}
+
+  .panel{display:none;}
+  .panel.show{display:block;animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+  .field label{font-size:13px;font-weight:600;color:var(--forest);}
+  .field input{font-family:'Inter',sans-serif;font-size:14.5px;color:var(--charcoal);padding:13px 15px;border-radius:12px;border:1.5px solid rgba(61,92,72,.2);background:var(--white);outline:none;transition:border .2s;}
+  .field input:focus{border-color:var(--sage-deep);}
+  .field .hint{font-size:11.5px;color:var(--muted);}
+  .pw-wrap{position:relative;}
+  .pw-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;}
+
+  .row-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;font-size:13px;}
+  .remember{display:flex;align-items:center;gap:7px;color:var(--muted);cursor:pointer;}
+  .remember input{accent-color:var(--sage-deep);}
+  .link{color:var(--sage-deep);font-weight:600;cursor:pointer;}
+  .link:hover{color:var(--forest);}
+
+  .btn{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--sage-deep);color:var(--cream);padding:14px;border-radius:999px;font-family:'Inter',sans-serif;font-weight:600;font-size:15px;border:none;cursor:pointer;transition:background .25s;}
+  .btn:hover{background:var(--forest);}
+
+  .divider{display:flex;align-items:center;gap:14px;margin:24px 0;color:var(--muted);font-size:12.5px;}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:rgba(61,92,72,.15);}
+
+  .switch-line{text-align:center;font-size:14px;color:var(--muted);margin-top:24px;}
+
+  .privacy-mini{display:flex;align-items:center;gap:7px;justify-content:center;font-size:12px;color:var(--muted);margin-top:20px;}
+
+  /* success / reset states */
+  .success-icon{width:72px;height:72px;border-radius:50%;background:var(--sage-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 22px;}
+  .center-panel{text-align:center;}
+  .center-panel h1{font-size:24px;color:var(--forest);margin-bottom:10px;}
+  .center-panel p{color:var(--muted);font-size:14.5px;margin-bottom:8px;}
+  .email-chip{display:inline-block;background:var(--sage-soft);color:var(--sage-deep);font-weight:600;font-size:13px;padding:6px 14px;border-radius:999px;margin:6px 0 20px;}
+
+  @media(max-width:860px){
+    .auth-wrap{grid-template-columns:1fr;}
+    .brand-panel{display:none;}
+    .form-panel{padding:40px 24px;min-height:100vh;}
+  }
+</style>
+</head>
+<body>
+
+<div class="auth-wrap">
+
+  <!-- LEFT BRAND PANEL -->
+  <div class="brand-panel">
+    <div class="ring r1"></div>
+    <div class="ring r2"></div>
+    <div class="brand-top">
+      <div class="brand-mark">M</div>
+      <div><strong>Dr. Mahnoor Irshad</strong><span>CONSULTANT PSYCHIATRIST</span></div>
+    </div>
+    <div class="brand-mid">
+      <h2>A calmer, lighter you starts here.</h2>
+      <p>Sign in to manage your appointments, or create an account to track your journey — all private, all secure.</p>
+    </div>
+    <div class="brand-quote">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F6F4EC" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      Your information is always confidential.
+    </div>
+  </div>
+
+  <!-- RIGHT FORM PANEL -->
+  <div class="form-panel">
+    <div class="form-box">
+      <a href="index.html" class="back-home">← Back to website</a>
+
+      <!-- LOGIN -->
+      <div class="panel show" id="login">
+        <div class="form-head">
+          <h1>Welcome back</h1>
+          <p>Sign in to your account to continue.</p>
+        </div>
+        <div class="field">
+          <label>Email or phone</label>
+          <input type="text" placeholder="you@example.com or 03xx-xxxxxxx">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="loginPw" placeholder="••••••••">
+            <button class="pw-toggle" onclick="togglePw('loginPw',this)">Show</button>
+          </div>
+        </div>
+        <div class="row-between">
+          <label class="remember"><input type="checkbox"> Remember me</label>
+          <span class="link" onclick="show('forgot')">Forgot password?</span>
+        </div>
+        <button class="btn">Sign In</button>
+        <div class="switch-line">Don't have an account? <span class="link" onclick="show('signup')">Sign up</span></div>
+        <div class="privacy-mini">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6A7169" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          Secure, encrypted sign-in
+        </div>
+      </div>
+
+      <!-- SIGNUP -->
+      <div class="panel" id="signup">
+        <div class="form-head">
+          <h1>Create your account</h1>
+          <p>Track your appointments and journey, privately.</p>
+        </div>
+        <div class="field">
+          <label>Full name</label>
+          <input type="text" placeholder="Your name">
+        </div>
+        <div class="field">
+          <label>Phone number</label>
+          <input type="tel" placeholder="03xx-xxxxxxx">
+        </div>
+        <div class="field">
+          <label>Email <span style="font-weight:400;color:var(--muted);">(optional)</span></label>
+          <input type="email" placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="signupPw" placeholder="Create a password">
+            <button class="pw-toggle" onclick="togglePw('signupPw',this)">Show</button>
+          </div>
+          <span class="hint">At least 8 characters.</span>
+        </div>
+        <button class="btn">Create Account</button>
+        <div class="switch-line">Already have an account? <span class="link" onclick="show('login')">Sign in</span></div>
+        <div class="privacy-mini">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6A7169" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          We never share your information
+        </div>
+      </div>
+
+      <!-- FORGOT — enter email -->
+      <div class="panel" id="forgot">
+        <div class="form-head">
+          <h1>Reset your password</h1>
+          <p>Enter your email or phone and we'll send you a reset link.</p>
+        </div>
+        <div class="field">
+          <label>Email or phone</label>
+          <input type="text" placeholder="you@example.com or 03xx-xxxxxxx">
+        </div>
+        <button class="btn" onclick="show('sent')">Send Reset Link</button>
+        <div class="switch-line"><span class="link" onclick="show('login')">← Back to sign in</span></div>
+      </div>
+
+      <!-- FORGOT — link sent -->
+      <div class="panel center-panel" id="sent">
+        <div class="success-icon">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#3D5C48" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        </div>
+        <h1>Check your inbox</h1>
+        <p>We've sent a password reset link to</p>
+        <span class="email-chip">you@example.com</span>
+        <p style="margin-bottom:24px;">Click the link in the email to set a new password. It may take a minute to arrive.</p>
+        <button class="btn" onclick="show('reset')">I've opened the link →</button>
+        <div class="switch-line">Didn't get it? <span class="link" onclick="show('forgot')">Try again</span></div>
+      </div>
+
+      <!-- RESET — new password -->
+      <div class="panel" id="reset">
+        <div class="form-head">
+          <h1>Set a new password</h1>
+          <p>Choose a strong password you'll remember.</p>
+        </div>
+        <div class="field">
+          <label>New password</label>
+          <div class="pw-wrap">
+            <input type="password" id="newPw" placeholder="New password">
+            <button class="pw-toggle" onclick="togglePw('newPw',this)">Show</button>
+          </div>
+          <span class="hint">At least 8 characters.</span>
+        </div>
+        <div class="field">
+          <label>Confirm new password</label>
+          <input type="password" placeholder="Re-enter password">
+        </div>
+        <button class="btn" onclick="show('done')">Update Password</button>
+      </div>
+
+      <!-- RESET done -->
+      <div class="panel center-panel" id="done">
+        <div class="success-icon">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#3D5C48" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h1>Password updated</h1>
+        <p style="margin-bottom:24px;">Your password has been changed successfully. You can now sign in with your new password.</p>
+        <button class="btn" onclick="show('login')">Back to Sign In</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function show(id){
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));
+    document.getElementById(id).classList.add('show');
+  }
+  function togglePw(id,btn){
+    const inp=document.getElementById(id);
+    if(inp.type==='password'){inp.type='text';btn.textContent='Hide';}
+    else{inp.type='password';btn.textContent='Show';}
+  }
+</script>
+
+</body>
+</html>

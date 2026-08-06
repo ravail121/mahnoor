@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patients — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,0,600;9..144,1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{--cream:#F6F4EC;--cream-deep:#EEEBDF;--sage:#7C9A83;--sage-soft:#DCE5DA;--sage-deep:#3D5C48;--forest:#2C4636;--charcoal:#2B302C;--muted:#6A7169;--white:#FDFCF9;--line:rgba(61,92,72,.12);--amber:#B5843A;--rose:#B06A5E;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--charcoal);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:500;line-height:1.15;}
+  .shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh;}
+  .side{background:var(--forest);color:rgba(246,244,236,.9);padding:26px 18px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+  .side-brand{display:flex;align-items:center;gap:11px;padding:0 8px 26px;border-bottom:1px solid rgba(246,244,236,.12);margin-bottom:20px;}
+  .side-mark{width:38px;height:38px;border-radius:11px 11px 11px 3px;background:var(--cream);color:var(--forest);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:18px;flex-shrink:0;}
+  .side-brand strong{font-family:'Fraunces',serif;font-size:15px;color:var(--cream);display:block;line-height:1.2;}
+  .side-brand span{font-size:10.5px;letter-spacing:.08em;opacity:.65;}
+  .nav-label{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.5;padding:0 10px;margin:6px 0 8px;}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;font-size:14px;font-weight:500;color:rgba(246,244,236,.82);margin-bottom:3px;cursor:pointer;transition:background .2s,color .2s;text-decoration:none;}
+  .nav-item:hover{background:rgba(246,244,236,.08);color:var(--cream);}
+  .nav-item.active{background:var(--sage);color:var(--forest);font-weight:600;}
+  .side-foot{margin-top:auto;padding-top:20px;border-top:1px solid rgba(246,244,236,.12);}
+  .side-user{display:flex;align-items:center;gap:10px;padding:8px 10px;}
+  .side-avatar{width:34px;height:34px;border-radius:50%;background:var(--sage);color:var(--forest);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;}
+  .side-user strong{font-size:13px;color:var(--cream);display:block;}
+  .side-user span{font-size:11px;opacity:.6;}
+  .signout{display:flex;align-items:center;gap:10px;padding:10px 12px;font-size:13px;color:rgba(246,244,236,.7);cursor:pointer;border-radius:10px;margin-top:4px;}
+  .signout:hover{background:rgba(246,244,236,.08);color:var(--cream);}
+
+  .main{padding:32px 40px 60px;max-width:1080px;}
+  .section-label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage-deep);font-weight:600;margin:10px 0 4px;}
+  .divider-note{font-size:13px;color:var(--muted);padding-bottom:18px;margin-bottom:24px;border-bottom:1px dashed var(--line);}
+  .page-head{margin-bottom:22px;}
+  .page-head .eyebrow{font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage-deep);font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+  .page-head .eyebrow::before{content:"";width:22px;height:1.5px;background:var(--sage);}
+  .page-head h1{font-size:30px;color:var(--forest);}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;background:var(--sage-deep);color:var(--cream);padding:11px 18px;border-radius:999px;font-weight:600;font-size:13.5px;border:none;cursor:pointer;transition:background .25s;}
+  .btn:hover{background:var(--forest);}
+  .btn.ghost{background:transparent;color:var(--sage-deep);border:1.5px solid var(--line);}
+  .btn.ghost:hover{background:var(--white);border-color:var(--sage-deep);}
+  .btn.sm{padding:8px 14px;font-size:12.5px;}
+
+  /* search */
+  .toolbar{display:flex;gap:12px;margin-bottom:18px;align-items:center;}
+  .search{flex:1;max-width:360px;position:relative;}
+  .search input{width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:11px 14px 11px 40px;border-radius:12px;border:1.5px solid var(--line);background:var(--white);outline:none;}
+  .search input:focus{border-color:var(--sage-deep);}
+  .search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);}
+
+  /* table */
+  .table-card{background:var(--white);border:1px solid var(--line);border-radius:18px;overflow:hidden;}
+  table{width:100%;border-collapse:collapse;}
+  thead th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--cream-deep);}
+  tbody td{padding:15px 20px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr{cursor:pointer;transition:background .15s;}
+  tbody tr:hover{background:var(--cream);}
+  .pt-cell{display:flex;align-items:center;gap:12px;}
+  .pt-av{width:36px;height:36px;border-radius:50%;background:var(--sage-soft);color:var(--sage-deep);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;}
+  .pt-cell strong{font-weight:600;color:var(--charcoal);}
+  .mono{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);}
+  .count-pill{font-size:12px;background:var(--sage-soft);color:var(--sage-deep);padding:2px 10px;border-radius:999px;font-weight:600;}
+
+  /* ===== DETAIL ===== */
+  .detail-grid{display:grid;grid-template-columns:.9fr 1.4fr;gap:20px;}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:24px;}
+  .pt-profile{text-align:center;padding:30px 24px;}
+  .pt-profile .big-av{width:72px;height:72px;border-radius:50%;background:var(--sage-soft);color:var(--sage-deep);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:28px;margin:0 auto 16px;}
+  .pt-profile h2{font-size:22px;color:var(--forest);margin-bottom:4px;}
+  .pt-profile .ph{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);margin-bottom:20px;}
+  .pt-meta-row{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line);font-size:13.5px;text-align:left;}
+  .pt-meta-row .lab{color:var(--muted);}
+  .pt-meta-row .val{color:var(--forest);font-weight:600;}
+  .edit-btn-wrap{margin-top:20px;}
+
+  .history-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .history-head h3{font-size:17px;color:var(--forest);}
+  .hist-item{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .hist-item:last-child{border-bottom:none;}
+  .hist-date{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--forest);width:90px;flex-shrink:0;}
+  .hist-body{flex:1;}
+  .hist-body .t{font-size:13.5px;color:var(--charcoal);font-weight:500;}
+  .type-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 9px;border-radius:999px;font-weight:600;}
+  .type-pill.inperson{background:var(--sage-soft);color:var(--sage-deep);}
+  .type-pill.online{background:#E1E7EF;color:#456086;}
+  .status{font-size:11px;padding:3px 10px;border-radius:999px;font-weight:600;}
+  .status.confirmed{background:var(--sage-soft);color:var(--sage-deep);}
+  .status.completed{background:#E4E7E3;color:var(--muted);}
+  .status.cancelled{background:#F0DED9;color:var(--rose);}
+  .back{font-size:13px;color:var(--muted);margin-bottom:18px;display:inline-flex;gap:6px;cursor:pointer;}
+  .back:hover{color:var(--forest);}
+
+  @media(max-width:900px){.shell{grid-template-columns:1fr;}.side{display:none;}.main{padding:24px 16px;}.detail-grid{grid-template-columns:1fr;}
+    thead{display:none;}tbody td{display:block;padding:6px 16px;border:none;}tbody tr{display:block;border-bottom:1px solid var(--line);padding:10px 0;}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="side-brand"><div class="side-mark">M</div><div><strong>Dr. Mahnoor</strong><span>ADMIN PANEL</span></div></div>
+    <div class="nav-label">Overview</div>
+    <a class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+    <div class="nav-label" style="margin-top:14px;">Manage</div>
+    <a class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Schedule</a>
+    <a class="nav-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Bookings</a>
+    <a class="nav-item active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>Patients</a>
+    <div class="side-foot">
+      <div class="side-user"><div class="side-avatar">M</div><div><strong>Dr. Mahnoor</strong><span>Consultant Psychiatrist</span></div></div>
+      <div class="signout"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign out</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ===== LIST VIEW ===== -->
+    <div class="section-label">View 1 · Patients list</div>
+    <div class="divider-note">All patients who've booked, searchable.</div>
+
+    <div class="page-head">
+      <div class="eyebrow">Manage</div>
+      <h1>Patients</h1>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" placeholder="Search by name or phone…">
+      </div>
+      <button class="btn ghost sm">+ Add patient</button>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Patient</th><th>Phone</th><th>Age</th><th>Bookings</th><th>Last visit</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><div class="pt-cell"><div class="pt-av">A</div><strong>Ayesha Khan</strong></div></td>
+            <td class="mono">0300 1234567</td><td>27</td>
+            <td><span class="count-pill">4 visits</span></td><td class="mono">5 Aug 2026</td>
+          </tr>
+          <tr>
+            <td><div class="pt-cell"><div class="pt-av">B</div><strong>Bilal Ahmed</strong></div></td>
+            <td class="mono">0321 9876543</td><td>34</td>
+            <td><span class="count-pill">2 visits</span></td><td class="mono">4 Aug 2026</td>
+          </tr>
+          <tr>
+            <td><div class="pt-cell"><div class="pt-av">S</div><strong>Sara Malik</strong></div></td>
+            <td class="mono">0333 5551212</td><td>22</td>
+            <td><span class="count-pill">1 visit</span></td><td class="mono">2 Aug 2026</td>
+          </tr>
+          <tr>
+            <td><div class="pt-cell"><div class="pt-av">H</div><strong>Hamza Sheikh</strong></div></td>
+            <td class="mono">0345 7778899</td><td>41</td>
+            <td><span class="count-pill">3 visits</span></td><td class="mono">4 Aug 2026</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ===== DETAIL VIEW ===== -->
+    <div class="section-label" style="margin-top:50px;">View 2 · Patient detail</div>
+    <div class="divider-note">Opens when a patient is clicked — profile + full booking history + edit.</div>
+
+    <div class="back">← Back to patients</div>
+    <div class="detail-grid">
+      <!-- profile -->
+      <div class="card pt-profile">
+        <div class="big-av">A</div>
+        <h2>Ayesha Khan</h2>
+        <div class="ph">0300 1234567</div>
+        <div class="pt-meta-row"><span class="lab">Age</span><span class="val">27 years</span></div>
+        <div class="pt-meta-row"><span class="lab">Total visits</span><span class="val">4</span></div>
+        <div class="pt-meta-row"><span class="lab">First seen</span><span class="val">Jul 2026</span></div>
+        <div class="pt-meta-row"><span class="lab">Last visit</span><span class="val">5 Aug 2026</span></div>
+        <div class="edit-btn-wrap"><button class="btn ghost sm">Edit details</button></div>
+      </div>
+
+      <!-- history -->
+      <div class="card">
+        <div class="history-head"><h3>Booking history</h3></div>
+        <div class="hist-item">
+          <div class="hist-date">5 Aug<br>5:00 PM</div>
+          <div class="hist-body"><div class="t">In-person visit</div><span class="type-pill inperson">◈ In-person</span></div>
+          <span class="status confirmed">Confirmed</span>
+        </div>
+        <div class="hist-item">
+          <div class="hist-date">22 Jul<br>7:00 PM</div>
+          <div class="hist-body"><div class="t">In-person visit</div><span class="type-pill inperson">◈ In-person</span></div>
+          <span class="status completed">Completed</span>
+        </div>
+        <div class="hist-item">
+          <div class="hist-date">8 Jul<br>5:30 PM</div>
+          <div class="hist-body"><div class="t">Online video session</div><span class="type-pill online">▶ Online</span></div>
+          <span class="status completed">Completed</span>
+        </div>
+        <div class="hist-item">
+          <div class="hist-date">1 Jul<br>6:00 PM</div>
+          <div class="hist-body"><div class="t">In-person visit</div><span class="type-pill inperson">◈ In-person</span></div>
+          <span class="status cancelled">Cancelled</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

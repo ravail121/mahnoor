@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — Dr. Mahnoor Irshad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,0,600;9..144,1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <div class="brand-mark">M</div>
+      <div class="brand-text"><strong>Dr. Mahnoor Irshad</strong><span>CONSULTANT PSYCHIATRIST</span></div>
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="contact.html">Contact</a>
+      <a href="booking.html" class="btn">Book Appointment</a>
+    </div>
+    <button class="menu-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+  </div>
+</nav>
+
+<header class="inner-hero">
+  <div class="wrap">
+    <div class="eyebrow">Get in Touch</div>
+    <h1>We're here to help you take the first step.</h1>
+  </div>
+</header>
+
+<section class="contact-sec">
+  <div class="wrap contact-grid">
+
+    <!-- LEFT: info -->
+    <div class="contact-info">
+      <div class="ci-block">
+        <div class="ci-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5C48" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div><h3>Clinic Location</h3><p>Farooq Hospital, DHA<br>Lahore, Pakistan</p></div>
+      </div>
+      <div class="ci-block">
+        <div class="ci-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5C48" stroke-width="2"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Z"/></svg></div>
+        <div><h3>WhatsApp</h3><p>Quick questions &amp; booking help<br><a href="#" class="ci-link">Message us on WhatsApp →</a></p></div>
+      </div>
+      <div class="ci-block">
+        <div class="ci-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5C48" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <div><h3>Timings</h3><p>Shared with you at booking confirmation. Both daytime and evening slots available.</p></div>
+      </div>
+      <div class="ci-block book-block">
+        <div><h3>Prefer to book directly?</h3><p>Skip the wait — reserve your slot online in under two minutes.</p>
+        <a href="booking.html" class="btn" style="margin-top:12px;">Book Appointment</a></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: form + map -->
+    <div class="contact-right">
+      <div class="contact-form card-lite">
+        <h3>Send a message</h3>
+        <p class="form-sub">For general questions. For appointments, please use the booking page.</p>
+        <div class="field"><label>Your name</label><input type="text" placeholder="Full name"></div>
+        <div class="field"><label>WhatsApp / Phone</label><input type="tel" placeholder="03xx-xxxxxxx"></div>
+        <div class="field"><label>Message</label><textarea placeholder="How can we help?"></textarea></div>
+        <button class="btn" style="width:100%;margin-top:6px;">Send Message</button>
+        <div class="privacy-note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3D5C48" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Your message is private and confidential.</div>
+      </div>
+
+      <div class="map-placeholder">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7C9A83" stroke-width="1.6"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span>Google Map — Farooq Hospital, DHA Lahore</span>
+        <small>(Map embeds here in the live site)</small>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <h4>Dr. Mahnoor Irshad</h4>
+        <p>MBBS · FCPS (Psychiatry)<br>Consultant Psychiatrist<br>Continental Medical College &amp; Farooq Hospital, DHA Lahore</p>
+        <div class="emergency">If you or someone you know is in immediate danger, please contact your nearest emergency service right away.</div>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <a href="about.html">About</a><a href="services.html">Services</a>
+        <a href="contact.html">Contact</a><a href="booking.html">Book Appointment</a>
+      </div>
+      <div>
+        <h4>Visit &amp; Contact</h4>
+        <p>Farooq Hospital, DHA<br>Lahore, Pakistan</p>
+        <a href="#">WhatsApp Us</a><p>Timings shared on booking</p>
+      </div>
+    </div>
+    <div class="foot-note"><span>© 2026 Dr. Mahnoor Irshad. All rights reserved.</span><span>Privacy · Confidentiality Policy</span></div>
+  </div>
+</footer>
+
+<a class="wa-float" href="#" aria-label="Chat on WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.6-6.1c-.3-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.7.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.4 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s1 2.5 1.1 2.7c.1.2 1.9 3 4.7 4.2.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2 0-.1-.2-.2-.3-.1Z"/></svg>
+</a>
+
+</body>
+</html>
