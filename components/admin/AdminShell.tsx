@@ -68,9 +68,13 @@ export function AdminShell({
       <div className="shell">
         <aside id={panelId} className={`side ${mobileOpen ? "open" : ""}`}>
           <div className="side-brand">
-            <div className="side-mark">
-              <Image src="/icon.png" alt="" width={24} height={24} />
-            </div>
+            <Image
+              src="/icon.png"
+              alt=""
+              width={38}
+              height={38}
+              className="side-mark"
+            />
             <div>
               <strong>Dr. Mahnoor</strong>
               <span>ADMIN PANEL</span>

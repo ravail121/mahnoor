@@ -1981,11 +1981,6 @@ footer {
 .auth-brand-mark {
   width: 42px;
   height: 42px;
-  border-radius: 12px 12px 12px 4px;
-  background: var(--cream);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
 }
 

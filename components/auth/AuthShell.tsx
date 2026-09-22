@@ -20,9 +20,13 @@ export function AuthShell({
         <div className="auth-ring auth-r1" />
         <div className="auth-ring auth-r2" />
         <div className="auth-brand-top">
-          <div className="auth-brand-mark">
-            <Image src="/icon.png" alt="" width={26} height={26} />
-          </div>
+          <Image
+            src="/icon.png"
+            alt=""
+            width={42}
+            height={42}
+            className="auth-brand-mark"
+          />
           <div>
             <strong>{siteConfig.doctorName}</strong>
             <span>{siteConfig.title.toUpperCase()}</span>

@@ -110,9 +110,13 @@ export function PatientShell({ children }: { children: React.ReactNode }) {
       <div className="pt-shell">
         <aside id={panelId} className={`pt-side ${mobileOpen ? "open" : ""}`}>
           <Link href="/" className="pt-side-brand" onClick={closeMobile}>
-            <div className="pt-side-mark">
-              <Image src="/icon.png" alt="" width={24} height={24} />
-            </div>
+            <Image
+              src="/icon.png"
+              alt=""
+              width={38}
+              height={38}
+              className="pt-side-mark"
+            />
             <div>
               <strong>{siteConfig.doctorName}</strong>
               <span>PATIENT PANEL</span>
