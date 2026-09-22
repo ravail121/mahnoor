@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -109,7 +110,9 @@ export function PatientShell({ children }: { children: React.ReactNode }) {
       <div className="pt-shell">
         <aside id={panelId} className={`pt-side ${mobileOpen ? "open" : ""}`}>
           <Link href="/" className="pt-side-brand" onClick={closeMobile}>
-            <div className="pt-side-mark">{siteConfig.brandInitial}</div>
+            <div className="pt-side-mark">
+              <Image src="/icon.png" alt="" width={24} height={24} />
+            </div>
             <div>
               <strong>{siteConfig.doctorName}</strong>
               <span>PATIENT PANEL</span>

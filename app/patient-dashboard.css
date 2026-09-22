@@ -54,12 +54,9 @@
   height: 38px;
   border-radius: 11px 11px 11px 3px;
   background: var(--cream);
-  color: var(--forest);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-serif);
-  font-size: 18px;
   flex-shrink: 0;
 }
 

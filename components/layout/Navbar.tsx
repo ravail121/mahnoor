@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -61,7 +62,14 @@ export function Navbar() {
     <nav style={{ position: "relative" }}>
       <div className="nav-inner">
         <Link href="/" className="brand">
-          <div className="brand-mark">{siteConfig.brandInitial}</div>
+          <Image
+            src="/icon.png"
+            alt=""
+            width={38}
+            height={38}
+            className="brand-mark"
+            priority
+          />
           <div className="brand-text">
             <strong>{siteConfig.doctorName}</strong>
             <span>{siteConfig.title.toUpperCase()}</span>

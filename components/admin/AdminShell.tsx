@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -67,7 +68,9 @@ export function AdminShell({
       <div className="shell">
         <aside id={panelId} className={`side ${mobileOpen ? "open" : ""}`}>
           <div className="side-brand">
-            <div className="side-mark">M</div>
+            <div className="side-mark">
+              <Image src="/icon.png" alt="" width={24} height={24} />
+            </div>
             <div>
               <strong>Dr. Mahnoor</strong>
               <span>ADMIN PANEL</span>
