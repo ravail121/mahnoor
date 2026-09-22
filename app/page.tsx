@@ -30,9 +30,9 @@ export default function HomePage() {
               <Link href="/booking" className="btn">
                 Book an Appointment
               </Link>
-              <a href={siteConfig.whatsappUrl} className="btn ghost">
-                Message on WhatsApp
-              </a>
+              <Link href="/contact" className="btn ghost">
+                Get in Touch
+              </Link>
             </div>
             <div className="privacy-line">
               <LockIcon />

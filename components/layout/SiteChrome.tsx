@@ -1,9 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { FaqWidget } from "@/components/layout/FaqWidget";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
-import { WhatsAppFloat } from "@/components/layout/WhatsAppFloat";
 
 const AUTH_PREFIXES = [
   "/login",
@@ -22,8 +22,8 @@ function isAdminRoute(pathname: string) {
   return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
-function isPatientDashboardHome(pathname: string) {
-  return pathname === "/dashboard";
+function isPatientDashboard(pathname: string) {
+  return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 }
 
 export function SiteChrome({ children }: { children: React.ReactNode }) {
@@ -32,7 +32,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
   if (
     isAuthRoute(pathname) ||
     isAdminRoute(pathname) ||
-    isPatientDashboardHome(pathname)
+    isPatientDashboard(pathname)
   ) {
     return <>{children}</>;
   }
@@ -42,7 +42,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />
-      <WhatsAppFloat />
+      <FaqWidget />
     </>
   );
 }

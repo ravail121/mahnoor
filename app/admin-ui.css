@@ -840,6 +840,144 @@
   margin-top: 6px;
 }
 
+.admin-app .schedule-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.admin-app .live-clock {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  background: var(--white);
+  border: 1.5px solid var(--line);
+  border-radius: 24px;
+  padding: 16px 24px 16px 16px;
+  min-width: min(100%, 420px);
+}
+
+.admin-app .live-clock-face {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 38%, #fff 0%, var(--cream) 72%);
+  border: 7px solid var(--forest);
+  box-shadow: inset 0 0 0 5px var(--sage-soft);
+}
+
+.admin-app .live-clock-tick {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  width: 2px;
+  height: 10px;
+  margin-left: -1px;
+  background: var(--sage);
+  transform-origin: 50% 67px;
+  border-radius: 999px;
+}
+
+.admin-app .live-clock-tick.major {
+  height: 14px;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--forest);
+}
+
+.admin-app .live-clock-hand {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  transform-origin: 50% 100%;
+  border-radius: 999px;
+}
+
+.admin-app .live-clock-hand.hour {
+  width: 6px;
+  height: 46px;
+  margin-left: -3px;
+  background: var(--forest);
+}
+
+.admin-app .live-clock-hand.minute {
+  width: 4px;
+  height: 62px;
+  margin-left: -2px;
+  background: var(--sage-deep);
+}
+
+.admin-app .live-clock-hand.second {
+  width: 2px;
+  height: 68px;
+  margin-left: -1px;
+  background: var(--rose);
+}
+
+.admin-app .live-clock-cap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--forest);
+  box-shadow: 0 0 0 3px var(--cream);
+}
+
+.admin-app .live-clock-label {
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sage-deep);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.admin-app .live-clock-date {
+  font-family: var(--font-fraunces), "Fraunces", serif;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--forest);
+  margin-bottom: 8px;
+}
+
+.admin-app .live-clock-time {
+  font-family: var(--font-fraunces), "Fraunces", serif;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--sage-deep);
+  font-weight: 500;
+}
+
+@media (max-width: 860px) {
+  .admin-app .schedule-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-app .live-clock {
+    min-width: 0;
+  }
+
+  .admin-app .live-clock-time {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-app .live-clock {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+  }
+}
+
 .admin-app .btn.sm {
   padding: 8px 14px;
   font-size: 12.5px;
@@ -1026,6 +1164,16 @@
 
 .admin-app .publish-panel .gen-row {
   margin-top: 14px;
+}
+
+.admin-app .gen-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-app .gen-field span {
+  color: var(--muted);
 }
 
 .admin-app .publish-hint {
@@ -1514,6 +1662,147 @@
   color: var(--muted);
 }
 
+.admin-app .pay.pending {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+/* payment verification list */
+.admin-app .pay-verify-card {
+  border-left: 3px solid var(--amber);
+}
+
+.admin-app .pay-verify-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-app .pay-verify-head .icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #f0e4cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.admin-app .pay-verify-head h3 {
+  font-size: 16px;
+  color: var(--forest);
+}
+
+.admin-app .pay-verify-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.admin-app .pay-verify-row:last-child {
+  border-bottom: none;
+}
+
+.admin-app .pay-verify-who {
+  flex: 1;
+  min-width: 160px;
+}
+
+.admin-app .pay-verify-who .pv-link {
+  display: block;
+  text-decoration: none;
+  border-radius: 8px;
+  margin: -4px -6px;
+  padding: 4px 6px;
+  transition: background 0.2s;
+}
+
+.admin-app .pay-verify-who .pv-link:hover {
+  background: var(--sage-soft);
+}
+
+.admin-app .pay-verify-who .pv-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.admin-app .pay-verify-who .pv-link:hover .pv-name {
+  color: var(--forest);
+}
+
+.admin-app .pay-verify-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.admin-app .pay-verify-amount {
+  font-family: var(--font-jetbrains), "JetBrains Mono", monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--forest);
+  min-width: 84px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.admin-app .pay-verify-badge {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.admin-app .pay-verify-badge.pending {
+  background: #f0e4cc;
+  color: var(--amber);
+}
+
+.admin-app .pay-verify-badge.success {
+  background: var(--sage-soft);
+  color: var(--sage-deep);
+}
+
+.admin-app .pay-verify-badge.failed {
+  background: #f0ded9;
+  color: var(--rose);
+}
+
+.admin-app .pay-verify-badge.refunded {
+  background: #e1e7ef;
+  color: #456086;
+}
+
+.admin-app .pay-verify-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.admin-app .pay-verify-invite {
+  width: 100%;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-app .pay-verify-invite-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .admin-app .amt {
   font-family: var(--font-jetbrains), "JetBrains Mono", monospace;
   font-size: 12.5px;
@@ -1740,6 +2029,43 @@
   grid-template-columns: 1.4fr 1.2fr 0.7fr auto;
   gap: 10px;
   align-items: center;
+}
+
+.admin-app .reschedule-form {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  text-align: left;
+}
+
+.admin-app .reschedule-form label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-app .reschedule-form input,
+.admin-app .reschedule-form select {
+  font-family: var(--font-inter), "Inter", sans-serif;
+  font-size: 13px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--white);
+  color: var(--charcoal);
+  outline: none;
+  width: 100%;
+}
+
+.admin-app .reschedule-form input:focus,
+.admin-app .reschedule-form select:focus {
+  border-color: var(--sage-deep);
 }
 
 .admin-app .patient-add-grid input,

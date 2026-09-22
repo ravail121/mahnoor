@@ -36,7 +36,13 @@ export function Footer() {
               <br />
               {siteConfig.city}, {siteConfig.country}
             </p>
-            <a href={siteConfig.whatsappUrl}>WhatsApp Us</a>
+            <a
+              href={siteConfig.whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              WhatsApp Us
+            </a>
             <p>Timings shared on booking</p>
           </div>
         </div>

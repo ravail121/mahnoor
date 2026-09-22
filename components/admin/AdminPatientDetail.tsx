@@ -63,7 +63,7 @@ function formatShortDate(value: string | null) {
 }
 
 function statusLabel(status: PatientBooking["status"]) {
-  if (status === "tentative") return "Pay on arrival";
+  if (status === "tentative") return "Awaiting verification";
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 

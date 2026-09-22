@@ -127,7 +127,8 @@ export function DateTimeStep({
     <div className="animate-fade-up">
       <h2>Pick a date &amp; time</h2>
       <p className="sub">
-        Only available slots are shown — booked times disappear automatically.
+        Only times at least 3 hours from now are shown. Booked slots disappear
+        automatically.
       </p>
 
       <div className="cal-head">
@@ -224,7 +225,8 @@ export function DateTimeStep({
 
           {!loading && !error && slots.length === 0 && (
             <p className="sub" style={{ marginTop: 8 }}>
-              No slots available for this day — please pick another date.
+              No times at least 3 hours from now on this day — please pick
+              another date.
             </p>
           )}
 

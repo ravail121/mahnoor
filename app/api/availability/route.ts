@@ -9,6 +9,7 @@ import {
   requireNumber,
   serverError,
 } from "@/lib/api";
+import { isSlotSelectable } from "@/lib/booking-window";
 
 /**
  * POST /api/availability
@@ -81,6 +82,9 @@ export async function GET(request: Request) {
     const doctorId = parseId(searchParams.get("doctor_id") ?? "");
     const dateRaw = searchParams.get("date");
     const availableOnly = searchParams.get("available_only") === "true";
+    const excludeBookingId = parseId(
+      searchParams.get("exclude_booking_id") ?? "",
+    );
 
     if (!doctorId || !dateRaw) {
       return fail("Query params doctor_id and date are required");
@@ -108,6 +112,7 @@ export async function GET(request: Request) {
         doctor_id: doctorId,
         date,
         status: "confirmed",
+        ...(excludeBookingId ? { NOT: { id: excludeBookingId } } : {}),
       },
       select: { time_slot: true },
     });
@@ -116,7 +121,9 @@ export async function GET(request: Request) {
     );
 
     const available = slots.filter(
-      (s) => !takenTimes.has(s.time_slot.toISOString()),
+      (s) =>
+        !takenTimes.has(s.time_slot.toISOString()) &&
+        isSlotSelectable(date, s.time_slot),
     );
 
     return ok(available);

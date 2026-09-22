@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminBookingActions } from "@/components/admin/AdminBookingActions";
+import { AdminPaymentVerify } from "@/components/admin/AdminPaymentVerify";
+import { buildInviteUrl } from "@/lib/invite-token";
 import { prisma } from "@/lib/prisma";
-import { formatTimeDisplay } from "@/lib/schedule";
+import { formatTimeDisplay, formatTimeInput } from "@/lib/schedule";
 
 function formatMoney(value: { toString(): string } | number | string) {
   const amount = Number(value.toString());
@@ -36,7 +38,7 @@ function bookingForLabel(value: string) {
 }
 
 function statusLabel(status: string) {
-  if (status === "tentative") return "Pay on arrival";
+  if (status === "tentative") return "Awaiting verification";
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
@@ -70,6 +72,24 @@ export default async function AdminBookingDetailPage({
   const dueAtClinic = Math.max(0, totalFee - amountPaid);
   const ageLabel =
     booking.patients.age != null ? `${booking.patients.age} years` : null;
+
+  const paymentRows = [...booking.payments]
+    .sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
+    .map((payment) => ({
+      id: payment.id,
+      amount: payment.amount.toString(),
+      method: payment.method,
+      status: payment.status,
+      created_at: payment.created_at.toISOString(),
+      inviteUrl: buildInviteUrl(booking.id),
+      booking: {
+        id: booking.id,
+        patientName: booking.patients.name,
+        patientPhone: booking.patients.phone,
+        dateLabel: formatShortDate(booking.date),
+        timeLabel: formatTimeDisplay(booking.time_slot),
+      },
+    }));
 
   return (
     <div className="booking-detail">
@@ -128,7 +148,14 @@ export default async function AdminBookingDetailPage({
         </div>
 
         <div className="card actions-card">
-          <AdminBookingActions bookingId={booking.id} status={booking.status} />
+          <AdminBookingActions
+            bookingId={booking.id}
+            status={booking.status}
+            doctorId={booking.doctor_id}
+            initialDate={booking.date.toISOString().slice(0, 10)}
+            initialTime={formatTimeInput(booking.time_slot)}
+            initialSessionType={booking.session_type}
+          />
 
           <div className="pay-summary">
             <div className="pay-line">
@@ -136,7 +163,7 @@ export default async function AdminBookingDetailPage({
               <span className="mono">{formatMoney(totalFee)}</span>
             </div>
             <div className="pay-line">
-              <span style={{ color: "var(--muted)" }}>Paid online</span>
+              <span style={{ color: "var(--muted)" }}>Verified so far</span>
               <span className="mono">{formatMoney(amountPaid)}</span>
             </div>
             <div className="pay-line total">
@@ -145,6 +172,8 @@ export default async function AdminBookingDetailPage({
             </div>
           </div>
         </div>
+
+        <AdminPaymentVerify payments={paymentRows} />
       </div>
     </div>
   );

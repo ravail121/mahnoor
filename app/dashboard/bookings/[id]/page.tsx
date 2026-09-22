@@ -5,21 +5,20 @@ import {
   PaymentStatusBadge,
   SessionTypeBadge,
 } from "@/components/admin/AdminBadge";
+import { BankDetails } from "@/components/ui/BankDetails";
 import { PatientBookingActions } from "@/components/patient/PatientBookingActions";
+import { PatientBookingEditor } from "@/components/patient/PatientBookingEditor";
 import { prisma } from "@/lib/prisma";
 import { canPatientAccessBooking, getPatientScope } from "@/lib/patient-dashboard";
-import { formatTimeDisplay } from "@/lib/schedule";
+import { getEditLockInstant, isBookingEditable } from "@/lib/booking-window";
+import { formatTimeDisplay, formatTimeInput } from "@/lib/schedule";
 
-function isUpcoming(date: Date, status: string) {
-  const now = new Date();
-  const today = new Date(
-    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}T00:00:00Z`,
-  );
-  return (
-    date >= today &&
-    (status === "tentative" || status === "confirmed")
-  );
-}
+const PAYMENT_STATUS_LABEL: Record<string, string> = {
+  pending: "Awaiting verification",
+  success: "Verified",
+  failed: "Not verified",
+  refunded: "Refunded",
+};
 
 function formatDateLabel(value: Date) {
   return value.toLocaleDateString("en-PK", {
@@ -27,6 +26,18 @@ function formatDateLabel(value: Date) {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function formatLockLabel(value: Date) {
+  return value.toLocaleString("en-PK", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
     timeZone: "UTC",
   });
 }
@@ -70,18 +81,25 @@ export default async function PatientBookingDetailPage({
   }
 
   const latestPayment = booking.payments[0] ?? null;
-  const canCancel = isUpcoming(booking.date, booking.status);
+  const canEdit = isBookingEditable(booking);
+  const stillOpen =
+    booking.status === "tentative" || booking.status === "confirmed";
+  const lockAt = getEditLockInstant(booking);
 
   return (
-    <section className="min-h-screen bg-cream px-4 py-10 sm:px-6">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <section className="px-0 py-0">
+      <div className="space-y-6">
         <div className="rounded-[32px] border border-[rgba(61,92,72,0.1)] bg-white px-6 py-8 shadow-[0_20px_70px_-38px_rgba(44,70,54,0.32)] sm:px-8">
           <Link href="/dashboard" className="text-sm font-semibold text-sage-deep">
             ← Back to dashboard
           </Link>
           <h1 className="mt-4 text-4xl text-forest">Appointment details</h1>
           <p className="mt-3 max-w-2xl text-[15px] text-muted">
-            A calm summary of your booking, payment status, and visit details.
+            {canEdit
+              ? `You can change this visit until ${formatLockLabel(lockAt)} — 3 hours before the appointment.`
+              : stillOpen
+                ? "This visit is locked. Nothing can be changed within 3 hours of the appointment."
+                : "A calm summary of your booking, payment status, and visit details."}
           </p>
         </div>
 
@@ -134,7 +152,19 @@ export default async function PatientBookingDetailPage({
           </div>
 
           <div className="space-y-6">
-            <PatientBookingActions bookingId={booking.id} canCancel={canCancel} />
+            {stillOpen ? (
+              <PatientBookingEditor
+                bookingId={booking.id}
+                canEdit={canEdit}
+                doctorId={booking.doctor_id}
+                initialDate={booking.date.toISOString().slice(0, 10)}
+                initialTime={formatTimeInput(booking.time_slot)}
+                initialSessionType={booking.session_type}
+                initialNotes={booking.notes ?? ""}
+              />
+            ) : null}
+
+            <PatientBookingActions bookingId={booking.id} canEdit={canEdit} />
 
             <div className="rounded-[28px] border border-[rgba(61,92,72,0.1)] bg-white p-6 shadow-[0_16px_44px_-34px_rgba(44,70,54,0.35)]">
               <h2 className="font-serif text-3xl text-forest">Payment</h2>
@@ -149,7 +179,7 @@ export default async function PatientBookingDetailPage({
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-muted">
-                    Amount paid
+                    Amount verified
                   </p>
                   <p className="mt-2 font-medium text-forest">
                     Rs. {booking.amount_paid.toString()}
@@ -157,15 +187,44 @@ export default async function PatientBookingDetailPage({
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-muted">
-                    Latest payment record
+                    Latest bank transfer
                   </p>
                   <p className="mt-2 text-sm text-muted">
                     {latestPayment
-                      ? `${latestPayment.method} • ${latestPayment.status}`
-                      : "No payment record yet"}
+                      ? `Rs. ${latestPayment.amount.toString()} • ${
+                          PAYMENT_STATUS_LABEL[latestPayment.status] ??
+                          latestPayment.status
+                        }`
+                      : "No bank transfer submitted yet"}
                   </p>
                 </div>
               </div>
+
+              {latestPayment?.status === "pending" && (
+                <div className="mt-5">
+                  <p className="text-sm text-muted">
+                    We&apos;re verifying your bank transfer against your
+                    WhatsApp screenshot — usually done within a few hours.
+                    Need to resend it?
+                  </p>
+                  <div className="mt-3">
+                    <BankDetails amount={Number(latestPayment.amount.toString())} reference={booking.id} />
+                  </div>
+                </div>
+              )}
+
+              {latestPayment?.status === "failed" && (
+                <div className="mt-5">
+                  <p className="text-sm text-muted">
+                    We couldn&apos;t verify your last transfer. Please resend
+                    your screenshot, or reach out if you think this is a
+                    mistake.
+                  </p>
+                  <div className="mt-3">
+                    <BankDetails amount={Number(latestPayment.amount.toString())} reference={booking.id} />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="rounded-[28px] border border-[rgba(61,92,72,0.1)] bg-white p-6 shadow-[0_16px_44px_-34px_rgba(44,70,54,0.35)]">

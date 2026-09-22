@@ -12,13 +12,22 @@ function createPrismaClient() {
   }
 
   // Prisma 7 requires a driver adapter for PostgreSQL.
-  // Supabase: swap DATABASE_URL only; same adapter works with Supabase Postgres.
   const adapter = new PrismaPg({ connectionString: url });
   return new PrismaClient({ adapter });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+function getPrismaClient() {
+  const cached = globalForPrisma.prisma;
+  // After `prisma generate`, drop a stale singleton that is missing new models.
+  if (cached?.saved_payment_methods) {
+    return cached;
+  }
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  const client = createPrismaClient();
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = client;
+  }
+  return client;
 }
+
+export const prisma = getPrismaClient();

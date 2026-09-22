@@ -1,24 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BookingProgress } from "@/components/booking/BookingProgress";
 import { ConfirmationStep } from "@/components/booking/steps/ConfirmationStep";
 import { DateTimeStep } from "@/components/booking/steps/DateTimeStep";
 import { DetailsStep } from "@/components/booking/steps/DetailsStep";
 import { PaymentStep } from "@/components/booking/steps/PaymentStep";
 import { SessionTypeStep } from "@/components/booking/steps/SessionTypeStep";
-import {
-  INITIAL_BOOKING,
-  type BookingData,
-  type BookingStatus,
-  type PaymentMethod,
-  type SessionType,
-} from "@/lib/booking";
-import { siteConfig } from "@/lib/site-config";
+import { INITIAL_BOOKING, type BookingData, type SessionType } from "@/lib/booking";
+
+const STORAGE_KEY = "clinic-booking-progress";
+
+type StoredState = { step: number; data: BookingData };
+
+function isStoredState(value: unknown): value is StoredState {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<StoredState>;
+  return (
+    typeof candidate.step === "number" &&
+    candidate.step >= 1 &&
+    candidate.step <= 5 &&
+    typeof candidate.data === "object" &&
+    candidate.data !== null
+  );
+}
 
 export function BookingWizard() {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<BookingData>(INITIAL_BOOKING);
+  const [restored, setRestored] = useState(false);
+
+  // Restore any in-progress booking so refreshing mid-flow doesn't lose it.
+  useEffect(() => {
+    try {
+      const raw = window.sessionStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed: unknown = JSON.parse(raw);
+        if (isStoredState(parsed)) {
+          // Syncing initial state in from sessionStorage (an external
+          // system), same pattern as this codebase's other fetch-on-mount
+          // effects.
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setStep(parsed.step);
+          setData(parsed.data);
+        }
+      }
+    } catch {
+      // Storage unavailable or corrupted — just start fresh.
+    } finally {
+      setRestored(true);
+    }
+  }, []);
+
+  // Persist on every change, but only once the initial restore has run —
+  // otherwise this would immediately overwrite saved progress with the
+  // blank starting state before it's had a chance to load.
+  useEffect(() => {
+    if (!restored) return;
+    try {
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, data }));
+    } catch {
+      // Storage unavailable (private browsing, quota) — progress just won't persist.
+    }
+  }, [restored, step, data]);
 
   function patch(partial: Partial<BookingData>) {
     setData((prev) => ({ ...prev, ...partial }));
@@ -42,9 +86,8 @@ export function BookingWizard() {
                   sessionType: type,
                   sessionLabel: label,
                   payNow,
-                  // Online always pays now; in-person chooses on payment step
-                  bookingStatus: type === "online" ? "confirmed" : null,
-                  paymentMethod: null,
+                  // Online always pays now; in-person picks an amount on the payment step
+                  paymentMethod: type === "online" ? "Bank" : null,
                   bookingId: null,
                   amountPaid: 0,
                 })
@@ -75,30 +118,12 @@ export function BookingWizard() {
           {step === 4 && (
             <PaymentStep
               data={data}
-              onSelectMethod={(method: PaymentMethod) =>
-                patch({ paymentMethod: method })
+              onSelectAmount={(amount) =>
+                patch({ payNow: amount, paymentMethod: "Bank" })
               }
-              onSetStatus={(status: BookingStatus) => {
-                if (status === "tentative") {
-                  patch({
-                    bookingStatus: status,
-                    paymentMethod: null,
-                    payNow: 0,
-                  });
-                } else {
-                  patch({
-                    bookingStatus: status,
-                    paymentMethod: null,
-                    payNow:
-                      data.sessionType === "in-person"
-                        ? siteConfig.inPersonReserveFee
-                        : siteConfig.onlineFullFee,
-                  });
-                }
-              }}
               onBack={() => go(3)}
-              onConfirm={({ bookingId, bookingStatus, amountPaid }) => {
-                patch({ bookingId, bookingStatus, amountPaid });
+              onConfirm={({ bookingId, amountPaid }) => {
+                patch({ bookingId, amountPaid });
                 go(5);
               }}
               onSlotTaken={() => {

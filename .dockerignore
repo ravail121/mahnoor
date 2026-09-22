@@ -1,6 +1,8 @@
 node_modules
 .next
 .git
+.env
+.env.*
 .gitignore
 design-reference
 README.md

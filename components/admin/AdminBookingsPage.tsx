@@ -16,6 +16,7 @@ type BookingRow = {
     name: string;
     phone: string;
   };
+  payments: { id: number; amount: string; status: string }[];
 };
 
 type ApiSuccess<T> = { success: true; data: T };
@@ -23,8 +24,9 @@ type ApiFailure = { success: false; error: string };
 
 const STATUS_TABS = [
   { value: "all", label: "All" },
+  { value: "payment_pending", label: "⚠ Verification pending" },
   { value: "confirmed", label: "Confirmed" },
-  { value: "tentative", label: "Pay on arrival" },
+  { value: "tentative", label: "Tentative" },
   { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
 ] as const;
@@ -50,19 +52,33 @@ function formatAmount(value: string) {
 }
 
 function statusLabel(status: BookingRow["status"]) {
-  if (status === "tentative") return "Pay on arrival";
+  if (status === "tentative") return "Awaiting verification";
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 function paymentPresentation(row: BookingRow) {
+  if (row.payments.length > 0) {
+    return {
+      className: "pending",
+      label: "Payment pending review",
+      amount: formatAmount(row.payments[0].amount),
+      paymentId: row.payments[0].id as number | null,
+    };
+  }
   if (row.status === "cancelled" && row.payment_status === "unpaid") {
-    return { className: "unpaid", label: "—", amount: null as string | null };
+    return {
+      className: "unpaid",
+      label: "—",
+      amount: null as string | null,
+      paymentId: null as number | null,
+    };
   }
   if (row.payment_status === "paid") {
     return {
       className: "paid",
       label: "Paid",
       amount: formatAmount(row.amount_paid),
+      paymentId: null as number | null,
     };
   }
   if (row.payment_status === "refunded") {
@@ -70,12 +86,14 @@ function paymentPresentation(row: BookingRow) {
       className: "unpaid",
       label: "Refunded",
       amount: formatAmount(row.amount_paid),
+      paymentId: null as number | null,
     };
   }
   return {
     className: "unpaid",
-    label: row.status === "tentative" ? "Pay on arrival" : "Unpaid",
+    label: "Unpaid",
     amount: null as string | null,
+    paymentId: null as number | null,
   };
 }
 
@@ -101,7 +119,9 @@ export function AdminBookingsPage() {
         doctor_id: String(DOCTOR_ID),
       });
       if (date) params.set("date", date);
-      if (status !== "all") params.set("status", status);
+      if (status !== "all" && status !== "payment_pending") {
+        params.set("status", status);
+      }
       if (sessionType !== "all") params.set("session_type", sessionType);
 
       const response = await fetch(`/api/bookings?${params.toString()}`);
@@ -119,6 +139,11 @@ export function AdminBookingsPage() {
       setLoading(false);
     }
   }
+
+  const visibleRows =
+    status === "payment_pending"
+      ? rows.filter((row) => row.payments.length > 0)
+      : rows;
 
   return (
     <>
@@ -167,8 +192,12 @@ export function AdminBookingsPage() {
           <p className="table-empty">Loading bookings...</p>
         ) : error ? (
           <p className="table-empty is-error">{error}</p>
-        ) : rows.length === 0 ? (
-          <p className="table-empty">No bookings match the current filters.</p>
+        ) : visibleRows.length === 0 ? (
+          <p className="table-empty">
+            {status === "payment_pending"
+              ? "Nothing waiting for verification right now."
+              : "No bookings match the current filters."}
+          </p>
         ) : (
           <table>
             <thead>
@@ -181,7 +210,7 @@ export function AdminBookingsPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => {
+              {visibleRows.map((row) => {
                 const online = row.session_type === "online";
                 const payment = paymentPresentation(row);
 
@@ -220,6 +249,12 @@ export function AdminBookingsPage() {
                         <>
                           {" "}
                           <span className="amt">{payment.amount}</span>
+                        </>
+                      ) : null}
+                      {payment.paymentId != null ? (
+                        <>
+                          {" "}
+                          <span className="amt">#{payment.paymentId}</span>
                         </>
                       ) : null}
                     </td>

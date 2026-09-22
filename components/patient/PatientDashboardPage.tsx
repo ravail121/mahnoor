@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { isBookingEditable } from "@/lib/booking-window";
 import { formatTimeDisplay } from "@/lib/schedule";
 import { siteConfig } from "@/lib/site-config";
 
@@ -41,10 +41,6 @@ function firstName(fullName: string) {
   return fullName.trim().split(/\s+/)[0] || fullName;
 }
 
-function initialFromName(name: string) {
-  return (name.trim()[0] ?? "?").toUpperCase();
-}
-
 function dateParts(value: string) {
   const date = new Date(value);
   return {
@@ -76,7 +72,7 @@ function statusLabel(status: DashboardBooking["status"]) {
     case "confirmed":
       return "Confirmed";
     case "tentative":
-      return "Pay on arrival";
+      return "Awaiting verification";
     case "completed":
       return "Completed";
     case "cancelled":
@@ -86,25 +82,15 @@ function statusLabel(status: DashboardBooking["status"]) {
   }
 }
 
-function UpcomingCard({
-  booking,
-  onCancel,
-  onCancelAndRebook,
-  busyId,
-}: {
-  booking: DashboardBooking;
-  onCancel: (bookingId: number, rebook: boolean) => void;
-  onCancelAndRebook: (bookingId: number) => void;
-  busyId: number | null;
-}) {
-  const isBusy = busyId === booking.id;
+function UpcomingCard({ booking }: { booking: DashboardBooking }) {
   const { day, mon } = dateParts(booking.date);
   const meta = sessionMeta(booking.session_type);
   const statusClass =
     booking.status === "confirmed" ? "confirmed" : "tentative";
+  const editable = isBookingEditable(booking);
 
   return (
-    <div className="appt-card">
+    <Link href={`/dashboard/bookings/${booking.id}`} className="appt-card">
       <div className="appt-date">
         <div className="day">{day}</div>
         <div className="mon">{mon}</div>
@@ -123,24 +109,11 @@ function UpcomingCard({
         <span className={`appt-status ${statusClass}`}>
           {statusLabel(booking.status)}
         </span>
-        <button
-          type="button"
-          className="appt-cancel"
-          disabled={isBusy}
-          onClick={() => onCancel(booking.id, false)}
-        >
-          {isBusy ? "Cancelling..." : "Cancel"}
-        </button>
-        <button
-          type="button"
-          className="appt-cancel-sub"
-          disabled={isBusy}
-          onClick={() => onCancelAndRebook(booking.id)}
-        >
-          Cancel &amp; rebook
-        </button>
+        <span className="appt-hint">
+          {editable ? "Edit details" : "View details"}
+        </span>
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -189,13 +162,10 @@ function PastCard({
 }
 
 export function PatientDashboardPage() {
-  const router = useRouter();
   const { data: session } = useSession();
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [busyBookingId, setBusyBookingId] = useState<number | null>(null);
 
   useEffect(() => {
     void loadDashboard();
@@ -222,162 +192,68 @@ export function PatientDashboardPage() {
     }
   }
 
-  async function cancelBooking(bookingId: number, rebook: boolean) {
-    if (!window.confirm("Cancel this appointment?")) return;
-
-    setBusyBookingId(bookingId);
-    setError("");
-    setNotice("");
-
-    try {
-      const response = await fetch(`/api/bookings/${bookingId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "cancelled" }),
-      });
-      const payload = (await response.json()) as
-        | ApiSuccess<unknown>
-        | ApiFailure;
-      parsePayload(payload);
-      setNotice("Your appointment has been cancelled.");
-      await loadDashboard();
-      if (rebook) {
-        router.push("/booking");
-      }
-    } catch (cancelError) {
-      setError(
-        cancelError instanceof Error
-          ? cancelError.message
-          : "Could not cancel this appointment",
-      );
-    } finally {
-      setBusyBookingId(null);
-    }
-  }
-
   const profileName = data?.profile?.name ?? session?.user?.name ?? "there";
   const displayFirst = firstName(profileName);
-  const totalBookings =
-    (data?.upcoming.length ?? 0) +
-    (data?.past.length ?? 0) +
-    (data?.cancelled.length ?? 0);
 
   return (
-    <div className="patient-dash">
-      <header className="pt-nav">
-        <div className="pt-nav-inner">
-          <Link href="/" className="pt-brand">
-            <div className="pt-mark">{siteConfig.brandInitial}</div>
-            <div>
-              <strong>{siteConfig.doctorName}</strong>
-              <span>{siteConfig.title}</span>
-            </div>
-          </Link>
-          <div className="pt-user">
-            <span className="pt-user-name">{displayFirst}</span>
-            <button
-              type="button"
-              className="pt-signout"
-              onClick={() => void signOut({ callbackUrl: "/" })}
-            >
-              Sign out
-            </button>
-            <div className="pt-avatar" aria-hidden="true">
-              {initialFromName(profileName)}
-            </div>
-          </div>
+    <>
+      <div className="pt-hello">
+        <div>
+          <h1>
+            Hello, <em>{displayFirst}</em>
+          </h1>
+          <p>Here are your appointments with Dr. Mahnoor.</p>
         </div>
-      </header>
+        <Link href="/booking" className="pt-btn">
+          + Book new appointment
+        </Link>
+      </div>
 
-      <main className="pt-main">
-        <div className="pt-hello">
-          <div>
-            <h1>
-              Hello, <em>{displayFirst}</em>
-            </h1>
-            <p>Here are your appointments with Dr. Mahnoor.</p>
-          </div>
-          <Link href="/booking" className="pt-btn">
-            + Book new appointment
-          </Link>
-        </div>
+      {error ? <div className="pt-notice err">{error}</div> : null}
 
-        {notice ? <div className="pt-notice ok">{notice}</div> : null}
-        {error ? <div className="pt-notice err">{error}</div> : null}
+      {loading ? (
+        <div className="pt-loading">Loading your appointments...</div>
+      ) : (
+        <>
+          <h2 className="pt-section-title">Upcoming</h2>
 
-        {loading ? (
-          <div className="pt-loading">Loading your appointments...</div>
-        ) : totalBookings === 0 ? (
-          <div className="pt-empty">
-            <h2>Welcome — your dashboard is ready</h2>
-            <p>
-              Once you book your first appointment, it will appear here. Guest
-              bookings on the same phone number will also show up automatically.
-            </p>
-            <Link href="/booking" className="pt-btn">
-              Book your first appointment
-            </Link>
-          </div>
-        ) : (
-          <>
-            <h2 className="pt-section-title">Upcoming</h2>
-
-            {data?.upcoming.length ? (
-              data.upcoming.map((booking) => (
-                <UpcomingCard
-                  key={booking.id}
-                  booking={booking}
-                  busyId={busyBookingId}
-                  onCancel={cancelBooking}
-                  onCancelAndRebook={(bookingId) =>
-                    void cancelBooking(bookingId, true)
-                  }
-                />
-              ))
-            ) : (
-              <div className="pt-empty">
-                <h2>Nothing upcoming right now</h2>
-                <p>
-                  When you&apos;re ready, book a new appointment and it will
-                  appear here immediately.
-                </p>
-                <Link href="/booking" className="pt-btn">
-                  + Book new appointment
-                </Link>
-              </div>
-            )}
-
-            {(data?.past.length ?? 0) > 0 ? (
-              <>
-                <h2 className="pt-section-title">Past</h2>
-                {data?.past.map((booking) => (
-                  <PastCard key={booking.id} booking={booking} />
-                ))}
-              </>
-            ) : null}
-
-            {(data?.cancelled.length ?? 0) > 0 ? (
-              <>
-                <h2 className="pt-section-title">Cancelled</h2>
-                {data?.cancelled.map((booking) => (
-                  <PastCard key={booking.id} booking={booking} past />
-                ))}
-              </>
-            ) : null}
-
-            <div className="profile-card">
-              <div>
-                <div className="pl">Your details</div>
-                <strong>{data?.profile?.name ?? "Not available"}</strong>
-                <div className="ph">{data?.profile?.phone ?? "Not available"}</div>
-              </div>
-              <button type="button" className="pt-btn ghost sm">
-                Edit
-              </button>
+          {data?.upcoming.length ? (
+            data.upcoming.map((booking) => (
+              <UpcomingCard key={booking.id} booking={booking} />
+            ))
+          ) : (
+            <div className="pt-empty">
+              <h2>No appointments yet</h2>
+              <p>
+                Book a visit when you are ready. Your details stay in the left
+                panel so you can update your photo, profile, and payment
+                methods anytime.
+              </p>
+              <Link href="/booking" className="pt-btn">
+                + Book new appointment
+              </Link>
             </div>
-          </>
-        )}
-      </main>
-    </div>
+          )}
+
+          {(data?.past.length ?? 0) > 0 ? (
+            <>
+              <h2 className="pt-section-title">Past</h2>
+              {data?.past.map((booking) => (
+                <PastCard key={booking.id} booking={booking} />
+              ))}
+            </>
+          ) : null}
+
+          {(data?.cancelled.length ?? 0) > 0 ? (
+            <>
+              <h2 className="pt-section-title">Cancelled</h2>
+              {data?.cancelled.map((booking) => (
+                <PastCard key={booking.id} booking={booking} past />
+              ))}
+            </>
+          ) : null}
+        </>
+      )}
+    </>
   );
 }

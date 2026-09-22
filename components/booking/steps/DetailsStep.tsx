@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { useSession } from "next-auth/react";
 import type { BookingData, BookingFor } from "@/lib/booking";
 import { LockIcon } from "@/components/ui/Icons";
 
@@ -11,7 +13,24 @@ type Props = {
 };
 
 export function DetailsStep({ data, onChange, onBack, onNext }: Props) {
-  const canContinue = data.fullName.trim().length > 0 && data.phone.trim().length > 0;
+  const { data: session } = useSession();
+  const prefilled = useRef(false);
+  const canContinue =
+    data.fullName.trim().length > 0 && data.phone.trim().length > 0;
+
+  useEffect(() => {
+    if (prefilled.current || !session?.user) return;
+    const patch: Partial<BookingData> = {};
+    if (!data.fullName.trim() && session.user.name) {
+      patch.fullName = session.user.name;
+    }
+    if (!data.phone.trim() && session.user.phone) {
+      patch.phone = session.user.phone;
+    }
+    if (Object.keys(patch).length === 0) return;
+    prefilled.current = true;
+    onChange(patch);
+  }, [session, data.fullName, data.phone, onChange]);
 
   return (
     <div className="animate-fade-up">
@@ -84,7 +103,12 @@ export function DetailsStep({ data, onChange, onBack, onNext }: Props) {
         <button type="button" className="btn ghost" onClick={onBack}>
           ← Back
         </button>
-        <button type="button" className="btn" disabled={!canContinue} onClick={onNext}>
+        <button
+          type="button"
+          className="btn"
+          disabled={!canContinue}
+          onClick={onNext}
+        >
           Continue to Payment →
         </button>
       </div>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { normalizeTimeToHHMM } from "@/lib/schedule";
 
 export type ApiSuccess<T> = { success: true; data: T };
 export type ApiError = { success: false; error: string };
@@ -41,10 +42,15 @@ export function requireNumber(value: unknown, field: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Parse YYYY-MM-DD into a Date suitable for MySQL DATE columns. */
+/** Parse YYYY-MM-DD into a UTC Date. Also accepts ISO datetimes. */
 export function parseDateOnly(value: unknown): Date | null {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return new Date(
+      Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()),
+    );
+  }
   if (typeof value !== "string") return null;
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
   if (!m) return null;
   const y = Number(m[1]);
   const mo = Number(m[2]);
@@ -61,39 +67,19 @@ export function parseDateOnly(value: unknown): Date | null {
 }
 
 /**
- * Parse a time string into a Date for MySQL TIME columns.
- * Accepts "17:00", "17:00:00", or "5:00 PM".
+ * Parse a time value into a Date for TIME columns.
+ * Accepts "17:00", "17:00:00", "5:00 PM", ISO datetimes, or Date.
  */
 export function parseTimeSlot(value: unknown): Date | null {
-  if (typeof value !== "string") return null;
-  const raw = value.trim();
-
-  // 24h: HH:MM or HH:MM:SS
-  let m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(raw);
-  if (m) {
-    const h = Number(m[1]);
-    const min = Number(m[2]);
-    const sec = Number(m[3] ?? "0");
-    if (h > 23 || min > 59 || sec > 59) return null;
-    return new Date(Date.UTC(1970, 0, 1, h, min, sec));
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return new Date(
+      Date.UTC(1970, 0, 1, value.getUTCHours(), value.getUTCMinutes(), 0),
+    );
   }
-
-  // 12h: H:MM AM/PM
-  m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(raw);
-  if (m) {
-    let h = Number(m[1]);
-    const min = Number(m[2]);
-    const period = m[3].toUpperCase();
-    if (h < 1 || h > 12 || min > 59) return null;
-    if (period === "AM") {
-      if (h === 12) h = 0;
-    } else if (h !== 12) {
-      h += 12;
-    }
-    return new Date(Date.UTC(1970, 0, 1, h, min, 0));
-  }
-
-  return null;
+  const hhmm = normalizeTimeToHHMM(value);
+  if (!hhmm) return null;
+  const [h, min] = hhmm.split(":").map(Number);
+  return new Date(Date.UTC(1970, 0, 1, h, min, 0));
 }
 
 export function formatDateOnly(date: Date): string {

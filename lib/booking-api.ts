@@ -1,4 +1,5 @@
-import type { PaymentMethod, SessionType } from "@/lib/booking";
+import type { SessionType } from "@/lib/booking";
+import { normalizeTimeToHHMM } from "@/lib/schedule";
 
 export const DOCTOR_ID = 1;
 
@@ -80,20 +81,19 @@ async function request<T>(
   return json.data;
 }
 
-/** Format API TIME ("1970-01-01T17:00:00.000Z") → "5:00 PM" */
-export function formatApiTime(iso: string): string {
-  const d = new Date(iso);
-  let h = d.getUTCHours();
-  const m = d.getUTCMinutes();
-  const period = h >= 12 ? "PM" : "AM";
-  h = h % 12 || 12;
-  return `${h}:${String(m).padStart(2, "0")} ${period}`;
+/** Format API TIME ("1970-01-01T17:00:00.000Z" or "17:00:00") → "5:00 PM" */
+export function formatApiTime(value: string): string {
+  const hhmm = normalizeTimeToHHMM(value);
+  if (!hhmm) return value;
+  const [hoursRaw, minutes] = hhmm.split(":").map(Number);
+  const period = hoursRaw >= 12 ? "PM" : "AM";
+  const hours = hoursRaw % 12 || 12;
+  return `${hours}:${String(minutes).padStart(2, "0")} ${period}`;
 }
 
 /** Format API TIME → "17:00" for POST bodies */
-export function apiTimeToHHMM(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+export function apiTimeToHHMM(value: string): string {
+  return normalizeTimeToHHMM(value) ?? value;
 }
 
 /** Display label for YYYY-MM-DD */
@@ -121,27 +121,18 @@ export function mapSessionType(value: SessionType): "in_person" | "online" {
   return value === "online" ? "online" : "in_person";
 }
 
-export function mapPaymentMethod(
-  method: PaymentMethod,
-): "card" | "jazzcash" | "easypaisa" | "bank" {
-  switch (method) {
-    case "Card":
-      return "card";
-    case "JazzCash":
-      return "jazzcash";
-    case "EasyPaisa":
-      return "easypaisa";
-    case "Bank":
-      return "bank";
-  }
-}
-
-export function fetchAvailability(date: string) {
+export function fetchAvailability(
+  date: string,
+  options?: { doctorId?: number; excludeBookingId?: number },
+) {
   const q = new URLSearchParams({
-    doctor_id: String(DOCTOR_ID),
+    doctor_id: String(options?.doctorId ?? DOCTOR_ID),
     date,
     available_only: "true",
   });
+  if (options?.excludeBookingId) {
+    q.set("exclude_booking_id", String(options.excludeBookingId));
+  }
   return request<AvailabilitySlot[]>(`/api/availability?${q}`);
 }
 
@@ -165,17 +156,17 @@ export function createBooking(input: {
       booking_for: mapBookingFor(input.bookingFor),
       session_type: mapSessionType(input.sessionType),
       date: input.date,
-      time_slot: input.time,
+      time_slot: normalizeTimeToHHMM(input.time) ?? input.time,
       notes: input.notes || null,
     }),
   });
 }
 
-export function createPayment(input: {
-  bookingId: number;
-  amount: number;
-  method: PaymentMethod;
-}) {
+/**
+ * Records a claimed bank transfer as "pending" — the booking stays tentative
+ * until an admin manually verifies the payment against the WhatsApp screenshot.
+ */
+export function createPayment(input: { bookingId: number; amount: number }) {
   return request<{
     payment: unknown;
     booking: ApiBooking;
@@ -185,9 +176,7 @@ export function createPayment(input: {
     body: JSON.stringify({
       booking_id: input.bookingId,
       amount: input.amount,
-      method: mapPaymentMethod(input.method),
-      status: "success",
-      gateway_ref: `demo-${Date.now()}`,
+      method: "bank",
     }),
   });
 }

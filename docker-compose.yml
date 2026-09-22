@@ -1,8 +1,13 @@
-# PostgreSQL + Adminer for local development.
-# App compose lives in docker-compose.app.yml
+# PostgreSQL + Adminer — used for both local dev and self-hosted production
+# (e.g. EC2). App compose lives in docker-compose.app.yml.
 #
-# Supabase / production: swap DATABASE_URL only, then run:
-#   npx prisma migrate deploy
+# Run together as one stack (required for the app to reach `clinic_postgres`
+# by name, and for depends_on/healthcheck ordering to work):
+#   docker compose -p clinic -f docker-compose.yml -f docker-compose.app.yml up -d --build
+#
+# Adminer is bound to 127.0.0.1 only — reach it via an SSH tunnel:
+#   ssh -L 8080:localhost:8080 <user>@<host>
+# then open http://localhost:8080 on your own machine.
 
 services:
   postgres:
@@ -34,7 +39,7 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
 
 volumes:
   clinic_postgres_data:

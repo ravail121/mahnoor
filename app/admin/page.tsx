@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { AdminDashboardMiniCal } from "@/components/admin/AdminDashboardMiniCal";
+import { AdminPaymentVerify } from "@/components/admin/AdminPaymentVerify";
+import { buildInviteUrl } from "@/lib/invite-token";
 import { prisma } from "@/lib/prisma";
 import {
   DOCTOR_ID,
@@ -8,6 +10,14 @@ import {
   formatTimeDisplay,
   getGreetingLabel,
 } from "@/lib/schedule";
+
+function formatShortDate(value: Date) {
+  return value.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+}
 
 function dateOnly(value: Date) {
   return new Date(`${formatDateInput(value)}T00:00:00Z`);
@@ -37,7 +47,7 @@ function statusClass(status: string) {
 }
 
 function statusLabel(status: string) {
-  if (status === "tentative") return "Pay on arrival";
+  if (status === "tentative") return "Awaiting verification";
   if (status === "confirmed") return "Confirmed";
   if (status === "completed") return "Completed";
   if (status === "cancelled") return "Cancelled";
@@ -48,7 +58,7 @@ export default async function AdminPage() {
   const today = dateOnly(new Date());
   const weekEnd = dateOnly(addDays(new Date(), 6));
 
-  const [todayAppointments, todayCount, weekCount, pendingArrival] =
+  const [todayAppointments, todayCount, weekCount, pendingArrival, pendingPayments] =
     await Promise.all([
       prisma.bookings.findMany({
         where: {
@@ -81,7 +91,28 @@ export default async function AdminPage() {
           date: { gte: today },
         },
       }),
+      prisma.payments.findMany({
+        where: { status: "pending", bookings: { doctor_id: DOCTOR_ID } },
+        include: { bookings: { include: { patients: true } } },
+        orderBy: { created_at: "asc" },
+      }),
     ]);
+
+  const pendingPaymentRows = pendingPayments.map((payment) => ({
+    id: payment.id,
+    amount: payment.amount.toString(),
+    method: payment.method,
+    status: payment.status,
+    created_at: payment.created_at.toISOString(),
+    inviteUrl: buildInviteUrl(payment.bookings.id),
+    booking: {
+      id: payment.bookings.id,
+      patientName: payment.bookings.patients.name,
+      patientPhone: payment.bookings.patients.phone,
+      dateLabel: formatShortDate(payment.bookings.date),
+      timeLabel: formatTimeDisplay(payment.bookings.time_slot),
+    },
+  }));
 
   const nextPatient =
     todayAppointments.find(
@@ -112,6 +143,16 @@ export default async function AdminPage() {
         </div>
       </div>
 
+      {pendingPaymentRows.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <AdminPaymentVerify
+            payments={pendingPaymentRows}
+            title={`Payments awaiting verification (${pendingPaymentRows.length})`}
+            showIcon
+          />
+        </div>
+      )}
+
       <div className="stats">
         <div className="stat today">
           <div className="spark" aria-hidden="true">
@@ -141,7 +182,7 @@ export default async function AdminPage() {
             </svg>
           </div>
           <div className="k">{pendingArrival}</div>
-          <div className="l">Pending pay-on-arrival</div>
+          <div className="l">Awaiting verification</div>
         </div>
       </div>
 

@@ -11,6 +11,7 @@ import {
   requireString,
   serverError,
 } from "@/lib/api";
+import { isSlotSelectable } from "@/lib/booking-window";
 
 const SESSION_TYPES = ["in_person", "online"] as const;
 const BOOKING_FOR = ["self", "family_member"] as const;
@@ -46,10 +47,15 @@ export async function POST(request: Request) {
 
     const phone = phoneInput ? normalizePhone(phoneInput) : null;
 
-    if (!doctorId || !name || !phone || !sessionType || !date || !timeSlot) {
-      return fail(
-        "Required: doctor_id, name, phone, session_type, date, time_slot",
-      );
+    const missing: string[] = [];
+    if (!doctorId) missing.push("doctor_id");
+    if (!name) missing.push("name");
+    if (!phone) missing.push("phone");
+    if (!sessionType) missing.push("session_type");
+    if (!date) missing.push("date");
+    if (!timeSlot) missing.push("time_slot");
+    if (missing.length > 0) {
+      return fail(`Missing or invalid: ${missing.join(", ")}`);
     }
     if (!SESSION_TYPES.includes(sessionType as (typeof SESSION_TYPES)[number])) {
       return fail("session_type must be in_person or online");
@@ -63,6 +69,13 @@ export async function POST(request: Request) {
 
     const doctor = await prisma.doctors.findUnique({ where: { id: doctorId } });
     if (!doctor) return fail("Doctor not found", 404);
+
+    if (!date || !timeSlot) {
+      return fail("Missing or invalid: date, time_slot");
+    }
+    if (!isSlotSelectable(date, timeSlot)) {
+      return fail("Please choose a time at least 3 hours from now.", 400);
+    }
 
     // Double-booking guard: no confirmed booking on this slot
     const confirmed = await prisma.bookings.findFirst({
@@ -172,7 +185,13 @@ export async function GET(request: Request) {
 
     const bookings = await prisma.bookings.findMany({
       where,
-      include: { patients: true },
+      include: {
+        patients: true,
+        payments: {
+          where: { status: "pending" },
+          select: { id: true, amount: true, status: true },
+        },
+      },
       orderBy: [{ date: "asc" }, { time_slot: "asc" }],
     });
 

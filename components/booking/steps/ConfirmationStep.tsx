@@ -1,68 +1,40 @@
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import type { BookingData } from "@/lib/booking";
 import { formatMoney } from "@/lib/booking";
 import { formatDisplayDate } from "@/lib/booking-api";
 import { siteConfig } from "@/lib/site-config";
+import { BankDetails } from "@/components/ui/BankDetails";
 
 type Props = {
   data: BookingData;
 };
 
 export function ConfirmationStep({ data }: Props) {
-  const isTentative = data.bookingStatus === "tentative";
-  const amountPaid = data.amountPaid || (isTentative ? 0 : data.payNow);
+  const { data: session } = useSession();
+  const amountPaid = data.amountPaid || 0;
   const remain = siteConfig.consultationFee - amountPaid;
   const displayDate = data.date ? formatDisplayDate(data.date) : "—";
   const displayTime = data.timeLabel || data.time || "—";
+  const signupHref = `/signup?name=${encodeURIComponent(data.fullName)}&phone=${encodeURIComponent(data.phone)}`;
 
   return (
     <div className="confirm-done animate-fade-up">
-      <div className="check-ring" style={isTentative ? { background: "#FFF4DC" } : undefined}>
-        {isTentative ? (
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#B98A00" strokeWidth="2.2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-        ) : (
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3D5C48" strokeWidth="2.4">
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
-        )}
+      <div className="check-ring" style={{ background: "#FFF4DC" }}>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#B98A00" strokeWidth="2.2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 7v5l3 2" />
+        </svg>
       </div>
 
-      {isTentative ? (
-        <>
-          <h2>Booking registered — tentative</h2>
-          <p>
-            Your appointment slot has been noted. However, it is{" "}
-            <strong>not fully secured</strong> — another patient can still
-            claim this time by paying online.
-          </p>
-          <div className="tentative-reminder">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-            <div>
-              <strong>To guarantee your slot</strong>, you can still pay{" "}
-              {formatMoney(siteConfig.inPersonReserveFee, siteConfig.currency)} online
-              (adjusted in your total fee at the clinic).
-              <br />
-              If your slot is taken, you will be notified by SMS.
-            </div>
-          </div>
-        </>
-      ) : (
-        <>
-          <h2>Your appointment is confirmed</h2>
-          <p>
-            Payment received and your slot is guaranteed. A confirmation with
-            all details has been sent to your WhatsApp.
-          </p>
-        </>
-      )}
+      <h2>Almost there — send your bank transfer</h2>
+      <p>
+        Your slot is held. Send{" "}
+        <strong>{formatMoney(amountPaid, siteConfig.currency)}</strong>{" "}
+        using the bank details below, then send your screenshot on WhatsApp —
+        we&apos;ll verify it and confirm your booking, usually within a few
+        hours.
+      </p>
 
       <div className="summary" style={{ textAlign: "left", marginTop: 22 }}>
         {data.bookingId != null && (
@@ -72,39 +44,44 @@ export function ConfirmationStep({ data }: Props) {
         <SummaryRow label="Date" value={displayDate} />
         <SummaryRow label="Time" value={displayTime} />
         <SummaryRow label="Name" value={data.fullName || "—"} />
+        <SummaryRow label="Status" value="Pending verification" />
         <SummaryRow
-          label="Status"
-          value={isTentative ? "Tentative (pay on arrival)" : "Confirmed"}
+          label="To send by bank transfer"
+          value={formatMoney(amountPaid, siteConfig.currency)}
         />
-        {!isTentative && (
-          <>
-            <SummaryRow
-              label={`Paid now (${data.paymentMethod ?? "—"})`}
-              value={formatMoney(amountPaid, siteConfig.currency)}
-            />
-            {amountPaid < siteConfig.consultationFee && (
-              <SummaryRow
-                label="Pay at clinic"
-                value={formatMoney(remain, siteConfig.currency)}
-                last
-              />
-            )}
-          </>
-        )}
-        {isTentative && (
+        {amountPaid < siteConfig.consultationFee && (
           <SummaryRow
             label="Pay at clinic"
-            value={formatMoney(siteConfig.consultationFee, siteConfig.currency)}
+            value={formatMoney(remain, siteConfig.currency)}
             last
           />
         )}
       </div>
 
-      <div className="btn-row" style={{ justifyContent: "center" }}>
-        <Link href={siteConfig.whatsappUrl} className="btn wa">
-          Open WhatsApp Confirmation
-        </Link>
+      <div style={{ marginBottom: 22 }}>
+        <BankDetails amount={amountPaid} reference={data.bookingId ?? undefined} />
       </div>
+
+      {!session?.user && (
+        <div
+          className="rounded-2xl bg-cream-deep p-5 text-center"
+          style={{ marginTop: 22 }}
+        >
+          <p className="text-sm font-semibold text-forest">
+            Want to manage this booking online?
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            Create a free account to check your payment status, reschedule,
+            or cancel anytime — no need to message us for changes.
+          </p>
+          <Link
+            href={signupHref}
+            className="mt-3 inline-flex items-center justify-center rounded-full border border-sage-deep/20 px-5 py-2.5 text-sm font-semibold text-forest transition hover:bg-sage-soft"
+          >
+            Create an account →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

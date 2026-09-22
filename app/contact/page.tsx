@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { LockIcon, SiteIcon } from "@/components/ui/Icons";
+import { ContactForm } from "@/components/contact/ContactForm";
+import { SiteIcon } from "@/components/ui/Icons";
 import { siteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = {
@@ -30,6 +31,15 @@ export default function ContactPage() {
                   {siteConfig.clinic}
                   <br />
                   {siteConfig.city}, {siteConfig.country}
+                  <br />
+                  <a
+                    href={siteConfig.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ci-link"
+                  >
+                    Get directions →
+                  </a>
                 </p>
               </div>
             </div>
@@ -42,9 +52,19 @@ export default function ContactPage() {
                 <p>
                   Quick questions &amp; booking help
                   <br />
-                  <a href={siteConfig.whatsappUrl} className="ci-link">
+                  <a
+                    href={siteConfig.whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ci-link"
+                  >
                     Message us on WhatsApp →
                   </a>
+                  <br />
+                  <span style={{ fontSize: "12.5px", color: "var(--muted)" }}>
+                    For appointments and general questions — not for
+                    emergencies or urgent clinical concerns.
+                  </span>
                 </p>
               </div>
             </div>
@@ -74,48 +94,24 @@ export default function ContactPage() {
           </div>
 
           <div className="contact-right">
-            <div className="contact-form card-lite">
-              <h3>Send a message</h3>
-              <p className="form-sub">
-                For general questions. For appointments, please use the booking
-                page.
-              </p>
-              <div className="field">
-                <label htmlFor="contact-name">Your name</label>
-                <input id="contact-name" type="text" placeholder="Full name" />
-              </div>
-              <div className="field">
-                <label htmlFor="contact-phone">WhatsApp / Phone</label>
-                <input
-                  id="contact-phone"
-                  type="tel"
-                  placeholder="03xx-xxxxxxx"
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="contact-message">Message</label>
-                <textarea
-                  id="contact-message"
-                  placeholder="How can we help?"
-                />
-              </div>
-              <button
-                type="button"
-                className="btn"
-                style={{ width: "100%", marginTop: 6 }}
-              >
-                Send Message
-              </button>
-              <div className="privacy-note">
-                <LockIcon size={14} />
-                Your message is private and confidential.
-              </div>
-            </div>
+            <ContactForm />
 
-            <div className="map-placeholder">
-              <SiteIcon name="pin" size={30} />
-              <span>Google Map — Farooq Hospital, DHA Lahore</span>
-              <small>(Map embeds here in the live site)</small>
+            <div className="map-embed">
+              <iframe
+                title={`${siteConfig.clinic} on Google Maps`}
+                src={siteConfig.mapsEmbedUrl}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+              <a
+                href={siteConfig.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="map-open-link"
+              >
+                Open in Google Maps
+              </a>
             </div>
           </div>
         </div>

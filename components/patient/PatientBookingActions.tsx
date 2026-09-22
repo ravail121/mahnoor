@@ -16,10 +16,10 @@ function parsePayload<T>(payload: ApiSuccess<T> | ApiFailure) {
 
 export function PatientBookingActions({
   bookingId,
-  canCancel,
+  canEdit,
 }: {
   bookingId: number;
-  canCancel: boolean;
+  canEdit: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -48,6 +48,7 @@ export function PatientBookingActions({
       }
 
       router.refresh();
+      router.push("/dashboard");
     } catch (cancelError) {
       setError(
         cancelError instanceof Error
@@ -59,16 +60,15 @@ export function PatientBookingActions({
     }
   }
 
-  if (!canCancel) {
+  if (!canEdit) {
     return null;
   }
 
   return (
     <div className="rounded-[24px] border border-[rgba(61,92,72,0.1)] bg-white p-5 shadow-[0_14px_44px_-34px_rgba(44,70,54,0.35)]">
-      <h2 className="font-serif text-2xl text-forest">Manage this booking</h2>
+      <h2 className="font-serif text-2xl text-forest">Cancel this booking</h2>
       <p className="mt-3 text-sm text-muted">
-        Need a different time? Cancel here, then book again whenever you&apos;re
-        ready.
+        Cancellation is available until 3 hours before your visit.
       </p>
       <div className="mt-5 flex flex-wrap gap-3">
         <Button variant="light" disabled={busy} onClick={() => void cancelBooking(false)}>

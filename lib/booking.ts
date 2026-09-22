@@ -1,11 +1,8 @@
 export type SessionType = "in-person" | "online";
 
-export type PaymentMethod = "Card" | "JazzCash" | "EasyPaisa" | "Bank";
+export type PaymentMethod = "Bank";
 
 export type BookingFor = "Myself" | "A family member";
-
-/** Whether the current booking is tentative (pay-on-arrival) or confirmed (paid). */
-export type BookingStatus = "confirmed" | "tentative";
 
 export interface BookingData {
   sessionType: SessionType | null;
@@ -22,12 +19,11 @@ export interface BookingData {
   age: string;
   bookingFor: BookingFor;
   note: string;
+  /** Set once an amount to pay now has been chosen — null means not chosen yet (in-person only). */
   paymentMethod: PaymentMethod | null;
-  /** Set at the payment step — only relevant for in-person */
-  bookingStatus: BookingStatus | null;
   /** Set after successful API create */
   bookingId: number | null;
-  /** amount_paid from API (confirmed path) */
+  /** Claimed amount sent by bank transfer, pending admin verification */
   amountPaid: number;
 }
 
@@ -44,7 +40,6 @@ export const INITIAL_BOOKING: BookingData = {
   bookingFor: "Myself",
   note: "",
   paymentMethod: null,
-  bookingStatus: null,
   bookingId: null,
   amountPaid: 0,
 };

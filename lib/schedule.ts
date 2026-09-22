@@ -16,6 +16,47 @@ export function padTime(value: number) {
   return String(value).padStart(2, "0");
 }
 
+/** Normalize a TIME value to HH:MM (24h). */
+export function normalizeTimeToHHMM(value: unknown): string | null {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return `${padTime(value.getUTCHours())}:${padTime(value.getUTCMinutes())}`;
+  }
+  if (typeof value !== "string") return null;
+  const raw = value.trim();
+  if (!raw) return null;
+
+  let match = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(raw);
+  if (match) {
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    if (hours > 23 || minutes > 59) return null;
+    return `${padTime(hours)}:${padTime(minutes)}`;
+  }
+
+  match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(raw);
+  if (match) {
+    let hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    const period = match[3].toUpperCase();
+    if (hours < 1 || hours > 12 || minutes > 59) return null;
+    if (period === "AM") {
+      if (hours === 12) hours = 0;
+    } else if (hours !== 12) {
+      hours += 12;
+    }
+    return `${padTime(hours)}:${padTime(minutes)}`;
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw) || raw.includes("T")) {
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      return `${padTime(parsed.getUTCHours())}:${padTime(parsed.getUTCMinutes())}`;
+    }
+  }
+
+  return null;
+}
+
 export function formatTimeInput(date: Date) {
   return `${padTime(date.getUTCHours())}:${padTime(date.getUTCMinutes())}`;
 }

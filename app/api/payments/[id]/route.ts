@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { fail, ok, parseId, requireString, serverError } from "@/lib/api";
 
@@ -5,8 +6,15 @@ type Ctx = { params: Promise<{ id: string }> };
 
 const STATUSES = ["pending", "success", "failed", "refunded"] as const;
 
+async function requireAdmin() {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "admin") return null;
+  return session;
+}
+
 /**
  * PATCH /api/payments/[id]
+ * Admin-only — verifies or rejects a claimed bank transfer.
  * Body: { status: 'pending' | 'success' | 'failed' | 'refunded' }
  *
  * When status becomes 'success':
@@ -18,6 +26,8 @@ const STATUSES = ["pending", "success", "failed", "refunded"] as const;
  */
 export async function PATCH(request: Request, context: Ctx) {
   try {
+    if (!(await requireAdmin())) return fail("Unauthorized", 401);
+
     const { id: idRaw } = await context.params;
     const id = parseId(idRaw);
     if (!id) return fail("Invalid payment id");

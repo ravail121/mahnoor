@@ -24,7 +24,7 @@ const options: {
     label: "In-person Visit",
     description: siteConfig.clinic,
     payNow: siteConfig.inPersonReserveFee,
-    feeLabel: `Reserve with ${formatMoney(siteConfig.inPersonReserveFee, siteConfig.currency)}`,
+    feeLabel: `${formatMoney(siteConfig.inPersonReserveFee, siteConfig.currency)} to reserve, or ${formatMoney(siteConfig.consultationFee, siteConfig.currency)} in full`,
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3D5C48" strokeWidth="2">
         <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />

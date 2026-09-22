@@ -1,6 +1,21 @@
+# The app container. Run together with docker-compose.yml as one stack —
+# see the header comment there for the combined command.
 services:
   web:
     build: .
     ports:
       - "3002:3000"
     restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Inside the container "127.0.0.1" would mean the container itself, so
+      # override the host-dev DATABASE_URL/DIRECT_URL from .env to reach
+      # Postgres by its Docker service name instead. Everything else (AUTH_URL,
+      # AUTH_SECRET, etc.) still comes from .env as-is — set AUTH_URL there to
+      # this server's real public URL for production.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@clinic_postgres:5432/${POSTGRES_DB}
+      DIRECT_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@clinic_postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy

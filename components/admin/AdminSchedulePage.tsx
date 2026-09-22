@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AdminLiveClock } from "@/components/admin/AdminLiveClock";
 import {
   DOCTOR_ID,
   WEEKDAY_OPTIONS,
@@ -13,6 +14,7 @@ import {
   getMonthTitle,
   formatTimeDisplay,
   startOfMonth,
+  normalizeTimeToHHMM,
 } from "@/lib/schedule";
 
 type WeeklyScheduleRow = {
@@ -53,7 +55,7 @@ type DayState = {
 
 type ApiSuccess<T> = { success: true; data: T };
 type ApiFailure = { success: false; error: string };
-type PublishRange = "week" | "month" | "year";
+type PublishRange = "week" | "month" | "year" | "custom";
 
 const DEFAULT_DAY_STATE: DayState = {
   enabled: false,
@@ -79,7 +81,7 @@ function parsePayload<T>(payload: ApiSuccess<T> | ApiFailure) {
 }
 
 function normalizeTimeString(value: string) {
-  return value.slice(11, 16);
+  return normalizeTimeToHHMM(value) ?? value;
 }
 
 function inferPatternSettings(slots: string[]) {
@@ -117,6 +119,9 @@ export function AdminSchedulePage() {
   const [sharedEnd, setSharedEnd] = useState("21:00");
   const [sharedInterval, setSharedInterval] = useState(30);
   const [generateStart, setGenerateStart] = useState(formatDateInput(today));
+  const [generateEnd, setGenerateEnd] = useState(
+    formatDateInput(addDays(addMonths(today, 1), -1)),
+  );
   const [publishRange, setPublishRange] = useState<PublishRange>("month");
   const [generateNotice, setGenerateNotice] = useState("");
   const [generateError, setGenerateError] = useState("");
@@ -334,24 +339,46 @@ export function AdminSchedulePage() {
     }
   }
 
+  function getPublishEndDate() {
+    if (publishRange === "custom") {
+      return generateEnd;
+    }
+
+    const startDate = new Date(`${generateStart}T00:00:00`);
+    const rangeEnd =
+      publishRange === "week"
+        ? addDays(startDate, 6)
+        : addDays(
+            addMonths(startDate, publishRange === "month" ? 1 : 12),
+            -1,
+          );
+    return formatDateInput(rangeEnd);
+  }
+
   async function generateSlots() {
     setGenerating(true);
     setGenerateError("");
     setGenerateNotice("");
 
     try {
+      if (!generateStart) {
+        setGenerateError("Choose a start date.");
+        return;
+      }
+
+      const endDate = getPublishEndDate();
+      if (!endDate) {
+        setGenerateError("Choose an end date.");
+        return;
+      }
+      if (endDate < generateStart) {
+        setGenerateError("End date must be on or after the start date.");
+        return;
+      }
+
       const saved = await saveWeeklyPattern({ showNotice: false });
       if (!saved) return;
 
-      const startDate = new Date(`${generateStart}T00:00:00`);
-      const rangeEnd =
-        publishRange === "week"
-          ? addDays(startDate, 6)
-          : addDays(
-              addMonths(startDate, publishRange === "month" ? 1 : 12),
-              -1,
-            );
-      const endDate = formatDateInput(rangeEnd);
       const response = await fetch("/api/admin/availability/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -548,10 +575,13 @@ export function AdminSchedulePage() {
 
   return (
     <>
-      <div className="page-head">
-        <div className="eyebrow">Manage</div>
-        <h1>Schedule</h1>
-        <p>Set your weekly hours, generate slots, and manage individual days.</p>
+      <div className="page-head schedule-head">
+        <div>
+          <div className="eyebrow">Manage</div>
+          <h1>Schedule</h1>
+          <p>Set your weekly hours, generate slots, and manage individual days.</p>
+        </div>
+        <AdminLiveClock />
       </div>
 
       <div className="card weekly">
@@ -651,12 +681,20 @@ export function AdminSchedulePage() {
             </p>
           </div>
           <div className="gen-row">
-            <span>Starting</span>
-            <input
-              type="date"
-              value={generateStart}
-              onChange={(event) => setGenerateStart(event.target.value)}
-            />
+            <label className="gen-field">
+              <span>{publishRange === "custom" ? "From" : "Starting"}</span>
+              <input
+                type="date"
+                value={generateStart}
+                onChange={(event) => {
+                  const nextStart = event.target.value;
+                  setGenerateStart(nextStart);
+                  if (publishRange === "custom" && generateEnd < nextStart) {
+                    setGenerateEnd(nextStart);
+                  }
+                }}
+              />
+            </label>
             <span>publish for</span>
             <select
               value={publishRange}
@@ -667,7 +705,19 @@ export function AdminSchedulePage() {
               <option value="week">1 week</option>
               <option value="month">1 month</option>
               <option value="year">1 year</option>
+              <option value="custom">Custom range</option>
             </select>
+            {publishRange === "custom" ? (
+              <label className="gen-field">
+                <span>To</span>
+                <input
+                  type="date"
+                  min={generateStart}
+                  value={generateEnd}
+                  onChange={(event) => setGenerateEnd(event.target.value)}
+                />
+              </label>
+            ) : null}
             <button
               type="button"
               className="btn sm"
@@ -678,8 +728,9 @@ export function AdminSchedulePage() {
             </button>
           </div>
           <p className="publish-hint">
-            Existing slots and booked appointments are never duplicated or
-            overwritten.
+            {generateStart && getPublishEndDate()
+              ? `Slots will be created from ${generateStart} to ${getPublishEndDate()}. Existing slots and booked appointments are never duplicated or overwritten.`
+              : "Existing slots and booked appointments are never duplicated or overwritten."}
           </p>
           {generateNotice ? (
             <p className="notice-ok">{generateNotice}</p>
