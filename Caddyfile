@@ -1,3 +1,4 @@
 drmahnoorirshad.com, www.drmahnoorirshad.com {
+	encode zstd gzip
 	reverse_proxy web:3000
 }
