@@ -1,10 +1,17 @@
-# The app container. Run together with docker-compose.yml as one stack —
-# see the header comment there for the combined command.
+# The app container. Run together with docker-compose.yml (and
+# docker-compose.proxy.yml, if using HTTPS via Caddy) as one stack — see the
+# header comment in docker-compose.yml for the combined command.
+#
+# No public port here by default — Caddy (docker-compose.proxy.yml) owns
+# 80/443 and reaches this container over the internal Docker network by
+# service name. Set APP_PORT if you want to expose it directly instead
+# (e.g. no domain/HTTPS yet) — bound to localhost only; use an SSH tunnel or
+# a security-group rule to reach it from outside.
 services:
   web:
     build: .
     ports:
-      - "3002:3000"
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
     restart: unless-stopped
     env_file:
       - .env

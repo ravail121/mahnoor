@@ -1,0 +1,27 @@
+# HTTPS reverse proxy (Caddy) — obtains and auto-renews a Let's Encrypt
+# certificate for the domain in Caddyfile with no extra setup.
+#
+# Run as part of the combined stack:
+#   docker compose -p clinic -f docker-compose.yml -f docker-compose.app.yml -f docker-compose.proxy.yml up -d --build
+#
+# Requires ports 80 and 443 open inbound in the server's security group —
+# 80 is used for the Let's Encrypt HTTP challenge (and to redirect to
+# https), 443 for the actual site.
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: clinic_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  caddy_data:
+  caddy_config:

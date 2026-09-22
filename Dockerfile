@@ -11,6 +11,13 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Next.js's build step imports route modules to collect page data, which
+# transitively constructs the Prisma client — it just needs a syntactically
+# valid value here, not a reachable database. The real DATABASE_URL is
+# injected at container runtime (see docker-compose.app.yml) and overrides
+# this; it never leaks into the running app.
+ARG DATABASE_URL="postgresql://user:password@localhost:5432/build_placeholder"
+ENV DATABASE_URL=$DATABASE_URL
 RUN npm run build
 
 FROM node:22-alpine AS runner

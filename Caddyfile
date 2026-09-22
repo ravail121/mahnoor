@@ -1,0 +1,3 @@
+drmahnoorirshad.com, www.drmahnoorirshad.com {
+	reverse_proxy web:3000
+}

@@ -4,6 +4,7 @@
 # Run together as one stack (required for the app to reach `clinic_postgres`
 # by name, and for depends_on/healthcheck ordering to work):
 #   docker compose -p clinic -f docker-compose.yml -f docker-compose.app.yml up -d --build
+# Add -f docker-compose.proxy.yml to that command for HTTPS via Caddy.
 #
 # Adminer is bound to 127.0.0.1 only — reach it via an SSH tunnel:
 #   ssh -L 8080:localhost:8080 <user>@<host>

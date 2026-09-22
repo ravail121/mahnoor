@@ -57,6 +57,11 @@ export async function POST(request: Request) {
     if (missing.length > 0) {
       return fail(`Missing or invalid: ${missing.join(", ")}`);
     }
+    // missing[] already guarantees these are non-null — this just narrows
+    // the types for TypeScript, since it can't follow that through an array.
+    if (!doctorId || !name || !phone || !sessionType || !date || !timeSlot) {
+      return fail("Missing or invalid input");
+    }
     if (!SESSION_TYPES.includes(sessionType as (typeof SESSION_TYPES)[number])) {
       return fail("session_type must be in_person or online");
     }
@@ -70,9 +75,6 @@ export async function POST(request: Request) {
     const doctor = await prisma.doctors.findUnique({ where: { id: doctorId } });
     if (!doctor) return fail("Doctor not found", 404);
 
-    if (!date || !timeSlot) {
-      return fail("Missing or invalid: date, time_slot");
-    }
     if (!isSlotSelectable(date, timeSlot)) {
       return fail("Please choose a time at least 3 hours from now.", 400);
     }
