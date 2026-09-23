@@ -20,12 +20,22 @@ type PaymentRow = {
     patientPhone: string;
     dateLabel: string;
     timeLabel: string;
+    sessionType: "in_person" | "online";
+    /** Set once a Zoom meeting has been created for this online booking. */
+    zoomJoinUrl: string | null;
+    zoomStartUrl: string | null;
   };
 };
 
 type ResponseShape = {
   success: boolean;
   error?: string;
+  data?: {
+    booking?: {
+      zoom_join_url: string | null;
+      zoom_start_url: string | null;
+    };
+  };
 };
 
 const STATUS_LABEL: Record<PaymentRow["status"], string> = {
@@ -59,10 +69,26 @@ function whatsappSendHref(phone: string, message: string) {
 
 function InviteSend({ payment }: { payment: PaymentRow }) {
   if (!payment.booking) return null;
-  const { patientName, patientPhone, dateLabel, timeLabel } = payment.booking;
+  const {
+    patientName,
+    patientPhone,
+    dateLabel,
+    timeLabel,
+    sessionType,
+    zoomJoinUrl,
+    zoomStartUrl,
+  } = payment.booking;
+  const isOnline = sessionType === "online";
 
-  const patientMessage = `Hi ${patientName}, your appointment with ${siteConfig.doctorName} on ${dateLabel} at ${timeLabel} is confirmed! Add it to your calendar: ${payment.inviteUrl}`;
-  const doctorMessage = `Booking confirmed: ${patientName} — ${dateLabel} at ${timeLabel}. Add to calendar: ${payment.inviteUrl}`;
+  const patientMessage =
+    isOnline && zoomJoinUrl
+      ? `Hi ${patientName}, your online appointment with ${siteConfig.doctorName} on ${dateLabel} at ${timeLabel} is confirmed! Join here: ${zoomJoinUrl}\nAdd it to your calendar: ${payment.inviteUrl}`
+      : `Hi ${patientName}, your appointment with ${siteConfig.doctorName} on ${dateLabel} at ${timeLabel} is confirmed! Add it to your calendar: ${payment.inviteUrl}`;
+
+  const doctorMessage =
+    isOnline && zoomStartUrl
+      ? `Booking confirmed: ${patientName} — ${dateLabel} at ${timeLabel}. Start Zoom: ${zoomStartUrl}\nAdd to calendar: ${payment.inviteUrl}`
+      : `Booking confirmed: ${patientName} — ${dateLabel} at ${timeLabel}. Add to calendar: ${payment.inviteUrl}`;
 
   return (
     <div className="pay-verify-invite">
@@ -85,6 +111,11 @@ function InviteSend({ payment }: { payment: PaymentRow }) {
           Send to doctor
         </a>
       </div>
+      {isOnline && !zoomJoinUrl && (
+        <p className="notice-err">
+          Zoom link not created — check ZOOM_* env vars, or add a link manually.
+        </p>
+      )}
     </div>
   );
 }
@@ -123,8 +154,25 @@ export function AdminPaymentVerify({
       // Keep the row (with its new status) visible locally — e.g. on the home
       // page, a refresh would otherwise drop it since that list only queries
       // pending payments, and we still want to offer the invite-send buttons.
+      // The Zoom links are only known once this response comes back (they're
+      // created server-side during verification), so merge them in here too.
+      const zoom = payload.data?.booking;
       setPayments((prev) =>
-        prev.map((payment) => (payment.id === id ? { ...payment, status } : payment)),
+        prev.map((payment) => {
+          if (payment.id !== id) return payment;
+          return {
+            ...payment,
+            status,
+            booking:
+              payment.booking && zoom
+                ? {
+                    ...payment.booking,
+                    zoomJoinUrl: zoom.zoom_join_url,
+                    zoomStartUrl: zoom.zoom_start_url,
+                  }
+                : payment.booking,
+          };
+        }),
       );
       router.refresh();
     } catch (updateError) {

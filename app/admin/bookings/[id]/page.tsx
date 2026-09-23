@@ -88,6 +88,9 @@ export default async function AdminBookingDetailPage({
         patientPhone: booking.patients.phone,
         dateLabel: formatShortDate(booking.date),
         timeLabel: formatTimeDisplay(booking.time_slot),
+        sessionType: booking.session_type,
+        zoomJoinUrl: booking.zoom_join_url,
+        zoomStartUrl: booking.zoom_start_url,
       },
     }));
 

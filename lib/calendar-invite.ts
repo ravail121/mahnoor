@@ -1,6 +1,6 @@
 import { siteConfig } from "@/lib/site-config";
 
-const APPOINTMENT_DURATION_MINUTES = 30;
+export const APPOINTMENT_DURATION_MINUTES = 30;
 
 export type CalendarEventInput = {
   patientName: string;
@@ -17,7 +17,7 @@ export type CalendarEvent = {
   description: string;
 };
 
-function toEventStart(date: Date, timeSlot: Date): Date {
+export function toEventStart(date: Date, timeSlot: Date): Date {
   return new Date(
     Date.UTC(
       date.getUTCFullYear(),

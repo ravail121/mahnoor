@@ -1,6 +1,9 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { fail, ok, parseId, requireString, serverError } from "@/lib/api";
+import { APPOINTMENT_DURATION_MINUTES, toEventStart } from "@/lib/calendar-invite";
+import { siteConfig } from "@/lib/site-config";
+import { createZoomMeeting, isZoomConfigured } from "@/lib/zoom";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -112,6 +115,39 @@ export async function PATCH(request: Request, context: Ctx) {
         bumped,
       };
     });
+
+    // Best-effort: an online booking gets a Zoom meeting once payment is
+    // verified. Done outside the transaction (it's an HTTP round-trip to
+    // Zoom) and never blocks payment verification if Zoom is unreachable
+    // or not configured yet.
+    if (
+      result.booking.session_type === "online" &&
+      !result.booking.zoom_join_url &&
+      isZoomConfigured()
+    ) {
+      try {
+        const startTime = toEventStart(
+          result.booking.date,
+          result.booking.time_slot,
+        );
+        const meeting = await createZoomMeeting({
+          topic: `Appointment: ${result.booking.patients.name} — ${siteConfig.doctorName}`,
+          startTime,
+          durationMinutes: APPOINTMENT_DURATION_MINUTES,
+        });
+        result.booking = await prisma.bookings.update({
+          where: { id: result.booking.id },
+          data: {
+            zoom_meeting_id: meeting.id,
+            zoom_join_url: meeting.joinUrl,
+            zoom_start_url: meeting.startUrl,
+          },
+          include: { patients: true },
+        });
+      } catch (zoomErr) {
+        console.error("Zoom meeting creation failed:", zoomErr);
+      }
+    }
 
     return ok(result);
   } catch (err) {

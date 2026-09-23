@@ -111,6 +111,9 @@ export default async function AdminPage() {
       patientPhone: payment.bookings.patients.phone,
       dateLabel: formatShortDate(payment.bookings.date),
       timeLabel: formatTimeDisplay(payment.bookings.time_slot),
+      sessionType: payment.bookings.session_type,
+      zoomJoinUrl: payment.bookings.zoom_join_url,
+      zoomStartUrl: payment.bookings.zoom_start_url,
     },
   }));
 
