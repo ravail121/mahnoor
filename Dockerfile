@@ -10,6 +10,11 @@ RUN npm ci
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+# `npm ci`'s postinstall generates the Prisma client into lib/generated
+# (see prisma/schema.prisma's generator output path) — carry that over
+# explicitly, since lib/generated is gitignored/dockerignored and COPY . .
+# below won't provide it.
+COPY --from=deps /app/lib/generated ./lib/generated
 COPY . .
 # Next.js's build step imports route modules to collect page data, which
 # transitively constructs the Prisma client — it just needs a syntactically
