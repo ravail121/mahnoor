@@ -11,9 +11,26 @@ import {
 } from "@/lib/content";
 import { siteConfig } from "@/lib/site-config";
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqItems.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
+    },
+  })),
+};
+
 export default function HomePage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <header className="hero">
         <div className="wrap hero-grid">
           <div>
@@ -24,7 +41,8 @@ export default function HomePage() {
             <p>
               Compassionate, confidential psychiatric care for anxiety,
               depression, sleep issues and more — in person at Farooq Hospital
-              DHA, or online from wherever you feel comfortable.
+              DHA, Lahore, or online from wherever you feel comfortable in
+              Pakistan.
             </p>
             <div className="hero-cta">
               <Link href="/booking" className="btn">

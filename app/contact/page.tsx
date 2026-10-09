@@ -5,7 +5,10 @@ import { SiteIcon } from "@/components/ui/Icons";
 import { siteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Contact",
+  title: "Contact Dr. Mahnoor Irshad — Psychiatrist in Lahore, DHA",
+  description:
+    "Get in touch with Dr. Mahnoor Irshad's clinic at Farooq Hospital, DHA Lahore. WhatsApp, directions, and online booking for psychiatric consultations.",
+  alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {

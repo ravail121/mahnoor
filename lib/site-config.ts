@@ -3,6 +3,7 @@
  * Update this file when rebranding for another doctor.
  */
 export const siteConfig = {
+  siteUrl: "https://drmahnoorirshad.com",
   doctorName: "Dr. Mahnoor Irshad",
   brandInitial: "M",
   title: "Consultant Psychiatrist",
@@ -13,6 +14,10 @@ export const siteConfig = {
   mapsUrl: "https://maps.app.goo.gl/N6xWue5Zcuem6b2v5",
   mapsEmbedUrl:
     "https://www.google.com/maps?q=31.485168,74.4085726&hl=en&z=17&output=embed",
+  geo: {
+    latitude: 31.485168,
+    longitude: 74.4085726,
+  },
   affiliations: "Continental Medical College & Farooq Hospital, DHA Lahore",
   tagline: "Psychiatry & Mental Wellness · Lahore",
   whatsappUrl: "https://wa.me/923091113356",

@@ -3,7 +3,10 @@ import { BookingWizard } from "@/components/booking/BookingWizard";
 import { LockIcon } from "@/components/ui/Icons";
 
 export const metadata: Metadata = {
-  title: "Book an Appointment",
+  title: "Book an Appointment — Dr. Mahnoor Irshad, Psychiatrist Lahore",
+  description:
+    "Book a confidential in-person or online appointment with Dr. Mahnoor Irshad, Consultant Psychiatrist in Lahore. Quick, private booking in under two minutes.",
+  alternates: { canonical: "/booking" },
 };
 
 export default function BookingPage() {

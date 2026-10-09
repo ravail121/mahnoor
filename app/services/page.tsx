@@ -3,7 +3,10 @@ import { CtaBand } from "@/components/sections/CtaBand";
 import { serviceDetails, servicesSteps } from "@/lib/content";
 
 export const metadata: Metadata = {
-  title: "Services",
+  title: "Psychiatric Services in Lahore — Anxiety, Depression, OCD & More",
+  description:
+    "Treatment for depression, anxiety & panic, sleep problems, OCD, stress & burnout, and mood or behavioural concerns — in person at Farooq Hospital DHA, Lahore, or online across Pakistan.",
+  alternates: { canonical: "/services" },
 };
 
 export default function ServicesPage() {

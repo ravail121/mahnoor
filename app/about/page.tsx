@@ -5,7 +5,10 @@ import { SiteIcon } from "@/components/ui/Icons";
 import { approachItems, qualifications } from "@/lib/content";
 
 export const metadata: Metadata = {
-  title: "About",
+  title: "About Dr. Mahnoor Irshad — Consultant Psychiatrist in Lahore",
+  description:
+    "Dr. Mahnoor Irshad is a Consultant Psychiatrist (MBBS, FCPS) based in Lahore, practicing at Farooq Hospital, DHA. Learn about her qualifications, approach, and experience.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {
