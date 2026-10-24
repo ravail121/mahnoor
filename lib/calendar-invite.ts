@@ -2,11 +2,15 @@ import { siteConfig } from "@/lib/site-config";
 
 export const APPOINTMENT_DURATION_MINUTES = 30;
 
+/** Asia/Karachi has no DST, so this offset is constant year-round. */
+const CLINIC_UTC_OFFSET_MINUTES = 5 * 60;
+
 export type CalendarEventInput = {
   patientName: string;
   sessionType: "in_person" | "online";
   date: Date;
   timeSlot: Date;
+  zoomJoinUrl?: string | null;
 };
 
 export type CalendarEvent = {
@@ -17,17 +21,21 @@ export type CalendarEvent = {
   description: string;
 };
 
+/**
+ * date/timeSlot store the Lahore wall-clock time encoded in UTC fields (see
+ * lib/booking-window.ts). Calendar invites and Zoom need a real UTC instant,
+ * so subtract the clinic's UTC offset to convert.
+ */
 export function toEventStart(date: Date, timeSlot: Date): Date {
-  return new Date(
-    Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate(),
-      timeSlot.getUTCHours(),
-      timeSlot.getUTCMinutes(),
-      0,
-    ),
+  const wallClockUtcMillis = Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    timeSlot.getUTCHours(),
+    timeSlot.getUTCMinutes(),
+    0,
   );
+  return new Date(wallClockUtcMillis - CLINIC_UTC_OFFSET_MINUTES * 60_000);
 }
 
 function formatICSDate(value: Date): string {
@@ -41,7 +49,9 @@ export function buildCalendarEvent(input: CalendarEventInput): CalendarEvent {
     input.sessionType === "online" ? "Online video session" : siteConfig.clinic;
   const description =
     input.sessionType === "online"
-      ? `Online psychiatry consultation with ${siteConfig.doctorName}.`
+      ? `Online psychiatry consultation with ${siteConfig.doctorName}.${
+          input.zoomJoinUrl ? `\nJoin Zoom: ${input.zoomJoinUrl}` : ""
+        }`
       : `In-person visit with ${siteConfig.doctorName} at ${siteConfig.clinic}.`;
 
   return {

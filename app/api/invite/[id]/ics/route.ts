@@ -35,6 +35,7 @@ export async function GET(request: Request, context: Ctx) {
     sessionType: booking.session_type,
     date: booking.date,
     timeSlot: booking.time_slot,
+    zoomJoinUrl: booking.zoom_join_url,
   });
   const ics = buildICS(event, `booking-${bookingId}@clinic`);
 

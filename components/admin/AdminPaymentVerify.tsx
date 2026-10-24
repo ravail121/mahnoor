@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { siteConfig } from "@/lib/site-config";
 
 type PaymentRow = {
@@ -137,6 +137,14 @@ export function AdminPaymentVerify({
   const [payments, setPayments] = useState(initialPayments);
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [error, setError] = useState("");
+
+  // initialPayments is rebuilt from the DB on every server render (e.g. after
+  // router.refresh() when a Zoom link is saved elsewhere on the page) — pick
+  // up those fresh values instead of staying pinned to whatever was passed
+  // in on first mount.
+  useEffect(() => {
+    setPayments(initialPayments);
+  }, [initialPayments]);
 
   async function updatePayment(id: number, status: "success" | "failed") {
     setLoadingId(id);
