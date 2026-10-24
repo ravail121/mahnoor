@@ -43,7 +43,10 @@ export async function GET(request: Request, context: Ctx) {
     status: 200,
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `attachment; filename="appointment-${bookingId}.ics"`,
+      // "inline" (not "attachment") lets mobile browsers hand this straight to
+      // the native Calendar app's add-confirmation screen instead of just
+      // downloading a file the user then has to go find and open themselves.
+      "Content-Disposition": `inline; filename="appointment-${bookingId}.ics"`,
     },
   });
 }
