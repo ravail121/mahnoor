@@ -185,6 +185,7 @@ export default async function AdminBookingDetailPage({
             dateLabel={formatShortDate(booking.date)}
             timeLabel={formatTimeDisplay(booking.time_slot)}
             initialZoomJoinUrl={booking.zoom_join_url}
+            inviteUrl={buildInviteUrl(booking.id)}
           />
         ) : null}
 

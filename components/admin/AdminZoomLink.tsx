@@ -18,6 +18,7 @@ export function AdminZoomLink({
   dateLabel,
   timeLabel,
   initialZoomJoinUrl,
+  inviteUrl,
 }: {
   bookingId: number;
   patientName: string;
@@ -25,6 +26,8 @@ export function AdminZoomLink({
   dateLabel: string;
   timeLabel: string;
   initialZoomJoinUrl: string | null;
+  /** Signed link to the booking's "Add to Calendar" / .ics download page. */
+  inviteUrl: string;
 }) {
   const router = useRouter();
   const [input, setInput] = useState(initialZoomJoinUrl ?? "");
@@ -63,10 +66,10 @@ export function AdminZoomLink({
   }
 
   const patientMessage = savedUrl
-    ? `Hi ${patientName}, your online appointment with ${siteConfig.doctorName} is confirmed for ${dateLabel} at ${timeLabel}. Join here: ${savedUrl}`
+    ? `Hi ${patientName}, your online appointment with ${siteConfig.doctorName} is confirmed for ${dateLabel} at ${timeLabel}. Join here: ${savedUrl}\nAdd it to your calendar: ${inviteUrl}`
     : "";
   const doctorMessage = savedUrl
-    ? `Online appointment: ${patientName} — ${dateLabel} at ${timeLabel}. Zoom link: ${savedUrl}`
+    ? `Online appointment: ${patientName} — ${dateLabel} at ${timeLabel}. Zoom link: ${savedUrl}\nAdd to calendar: ${inviteUrl}`
     : "";
 
   async function copy(which: "patient" | "doctor") {
