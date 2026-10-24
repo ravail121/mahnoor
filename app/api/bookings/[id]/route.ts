@@ -87,6 +87,9 @@ export async function PATCH(request: Request, context: Ctx) {
       if (body.payment_status != null || body.amount_paid != null) {
         return fail("Patients cannot change payment details", 403);
       }
+      if (body.zoom_join_url != null) {
+        return fail("Patients cannot change the Zoom link", 403);
+      }
       if (body.status && body.status !== "cancelled") {
         return fail("Patients can only cancel or update their own bookings", 403);
       }
@@ -96,6 +99,13 @@ export async function PATCH(request: Request, context: Ctx) {
       if (!isBookingEditable(existing)) {
         return fail(LOCKED_MESSAGE, 400);
       }
+    }
+
+    let zoomJoinUrl: string | undefined;
+    if (body.zoom_join_url != null) {
+      const url = requireString(body.zoom_join_url, "zoom_join_url");
+      if (!url) return fail("Invalid zoom_join_url");
+      zoomJoinUrl = url;
     }
 
     if (body.status != null) {
@@ -219,6 +229,7 @@ export async function PATCH(request: Request, context: Ctx) {
           ? { payment_status: body.payment_status }
           : {}),
         ...(amountPaid !== undefined ? { amount_paid: amountPaid } : {}),
+        ...(zoomJoinUrl !== undefined ? { zoom_join_url: zoomJoinUrl } : {}),
         ...(wantsDetailsUpdate && !wantsCancel
           ? {
               date: nextDate,

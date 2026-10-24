@@ -85,9 +85,10 @@ function InviteSend({ payment }: { payment: PaymentRow }) {
       ? `Hi ${patientName}, your online appointment with ${siteConfig.doctorName} on ${dateLabel} at ${timeLabel} is confirmed! Join here: ${zoomJoinUrl}\nAdd it to your calendar: ${payment.inviteUrl}`
       : `Hi ${patientName}, your appointment with ${siteConfig.doctorName} on ${dateLabel} at ${timeLabel} is confirmed! Add it to your calendar: ${payment.inviteUrl}`;
 
+  const doctorZoomUrl = zoomStartUrl ?? zoomJoinUrl;
   const doctorMessage =
-    isOnline && zoomStartUrl
-      ? `Booking confirmed: ${patientName} — ${dateLabel} at ${timeLabel}. Start Zoom: ${zoomStartUrl}\nAdd to calendar: ${payment.inviteUrl}`
+    isOnline && doctorZoomUrl
+      ? `Booking confirmed: ${patientName} — ${dateLabel} at ${timeLabel}. ${zoomStartUrl ? "Start" : "Join"} Zoom: ${doctorZoomUrl}\nAdd to calendar: ${payment.inviteUrl}`
       : `Booking confirmed: ${patientName} — ${dateLabel} at ${timeLabel}. Add to calendar: ${payment.inviteUrl}`;
 
   return (

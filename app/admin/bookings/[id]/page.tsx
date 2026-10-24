@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminBookingActions } from "@/components/admin/AdminBookingActions";
 import { AdminPaymentVerify } from "@/components/admin/AdminPaymentVerify";
+import { AdminZoomLink } from "@/components/admin/AdminZoomLink";
 import { buildInviteUrl } from "@/lib/invite-token";
 import { prisma } from "@/lib/prisma";
 import { formatTimeDisplay, formatTimeInput } from "@/lib/schedule";
@@ -175,6 +176,17 @@ export default async function AdminBookingDetailPage({
             </div>
           </div>
         </div>
+
+        {booking.session_type === "online" ? (
+          <AdminZoomLink
+            bookingId={booking.id}
+            patientName={booking.patients.name}
+            patientPhone={booking.patients.phone}
+            dateLabel={formatShortDate(booking.date)}
+            timeLabel={formatTimeDisplay(booking.time_slot)}
+            initialZoomJoinUrl={booking.zoom_join_url}
+          />
+        ) : null}
 
         <AdminPaymentVerify payments={paymentRows} />
       </div>
