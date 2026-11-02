@@ -28,7 +28,24 @@ type AvailabilitySlot = {
   id: number;
   time_slot: string;
   is_active: boolean;
+  in_person_enabled: boolean;
+  online_enabled: boolean;
 };
+
+type Scope = "in_person" | "online" | "both";
+
+const SCOPE_OPTIONS: { value: Scope; label: string }[] = [
+  { value: "both", label: "Onsite + Online" },
+  { value: "in_person", label: "Onsite only" },
+  { value: "online", label: "Online only" },
+];
+
+function scopeLabel(slot: Pick<AvailabilitySlot, "in_person_enabled" | "online_enabled">) {
+  if (slot.in_person_enabled && slot.online_enabled) return null;
+  if (slot.online_enabled) return "Online only";
+  if (slot.in_person_enabled) return "Onsite only";
+  return null;
+}
 
 type BookingSlot = {
   id: number;
@@ -127,15 +144,7 @@ export function AdminSchedulePage() {
   const [generateError, setGenerateError] = useState("");
   const [generating, setGenerating] = useState(false);
 
-  const [bookingTypes, setBookingTypes] = useState<{
-    online_enabled: boolean;
-    in_person_enabled: boolean;
-  } | null>(null);
-  const [bookingTypesLoading, setBookingTypesLoading] = useState(true);
-  const [bookingTypesSaving, setBookingTypesSaving] = useState<
-    "online" | "in_person" | null
-  >(null);
-  const [bookingTypesError, setBookingTypesError] = useState("");
+  const [publishScope, setPublishScope] = useState<Scope>("both");
 
   const [selectedDate, setSelectedDate] = useState(formatDateInput(today));
   const [visibleMonth, setVisibleMonth] = useState(startOfMonth(today));
@@ -151,10 +160,12 @@ export function AdminSchedulePage() {
   const [dayActionNotice, setDayActionNotice] = useState("");
   const [dayActionError, setDayActionError] = useState("");
   const [manualDateSlot, setManualDateSlot] = useState("17:00");
+  const [manualSlotScope, setManualSlotScope] = useState<Scope>("both");
+  const [blockScope, setBlockScope] = useState<Scope>("both");
+  const [slotRemoveScope, setSlotRemoveScope] = useState<Record<number, Scope>>({});
 
   useEffect(() => {
     void loadWeeklySchedule();
-    void loadBookingTypes();
   }, []);
 
   useEffect(() => {
@@ -220,54 +231,6 @@ export function AdminSchedulePage() {
       );
     } finally {
       setWeeklyLoading(false);
-    }
-  }
-
-  async function loadBookingTypes() {
-    setBookingTypesLoading(true);
-    setBookingTypesError("");
-
-    try {
-      const response = await fetch(
-        `/api/admin/booking-settings?doctor_id=${DOCTOR_ID}`,
-      );
-      const payload = (await response.json()) as
-        | ApiSuccess<{ online_enabled: boolean; in_person_enabled: boolean }>
-        | ApiFailure;
-      setBookingTypes(parsePayload(payload));
-    } catch (error) {
-      setBookingTypesError(
-        error instanceof Error ? error.message : "Could not load booking settings",
-      );
-    } finally {
-      setBookingTypesLoading(false);
-    }
-  }
-
-  async function toggleBookingType(type: "online" | "in_person") {
-    if (!bookingTypes) return;
-    setBookingTypesSaving(type);
-    setBookingTypesError("");
-
-    const field = type === "online" ? "online_enabled" : "in_person_enabled";
-    const nextValue = !bookingTypes[field];
-
-    try {
-      const response = await fetch("/api/admin/booking-settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doctor_id: DOCTOR_ID, [field]: nextValue }),
-      });
-      const payload = (await response.json()) as
-        | ApiSuccess<{ online_enabled: boolean; in_person_enabled: boolean }>
-        | ApiFailure;
-      setBookingTypes(parsePayload(payload));
-    } catch (error) {
-      setBookingTypesError(
-        error instanceof Error ? error.message : "Could not update booking settings",
-      );
-    } finally {
-      setBookingTypesSaving(null);
     }
   }
 
@@ -445,6 +408,8 @@ export function AdminSchedulePage() {
           doctor_id: DOCTOR_ID,
           start_date: generateStart,
           end_date: endDate,
+          in_person_enabled: publishScope !== "online",
+          online_enabled: publishScope !== "in_person",
         }),
       });
       const payload = (await response.json()) as
@@ -496,6 +461,8 @@ export function AdminSchedulePage() {
           doctor_id: DOCTOR_ID,
           date: selectedDate,
           time_slot: manualDateSlot,
+          in_person_enabled: manualSlotScope !== "online",
+          online_enabled: manualSlotScope !== "in_person",
         }),
       });
       const payload = (await response.json()) as ApiSuccess<unknown> | ApiFailure;
@@ -532,17 +499,19 @@ export function AdminSchedulePage() {
     }
   }
 
-  async function deleteSlot(slotId: number) {
+  async function deleteSlot(slotId: number, remove: Scope) {
     setDayActionError("");
     setDayActionNotice("");
 
     try {
       const response = await fetch(`/api/availability/${slotId}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remove }),
       });
       const payload = (await response.json()) as ApiSuccess<unknown> | ApiFailure;
       parsePayload(payload);
-      setDayActionNotice("Slot removed.");
+      setDayActionNotice("Slot updated.");
       await loadDayView(selectedDate);
       await loadMonthSummary(visibleMonth);
     } catch (error) {
@@ -564,6 +533,7 @@ export function AdminSchedulePage() {
           doctor_id: DOCTOR_ID,
           date: selectedDate,
           action: "block",
+          scope: blockScope,
         }),
       });
       const payload = (await response.json()) as
@@ -571,7 +541,7 @@ export function AdminSchedulePage() {
         | ApiFailure;
       const result = parsePayload(payload);
       setDayActionNotice(
-        `Blocked ${result.blocked} slots. Protected booked slots: ${result.protected_booked_slots}.`,
+        `Blocked ${result.blocked} slot(s). Protected booked slots: ${result.protected_booked_slots}.`,
       );
       await loadDayView(selectedDate);
       await loadMonthSummary(visibleMonth);
@@ -641,52 +611,6 @@ export function AdminSchedulePage() {
           <p>Set your weekly hours, generate slots, and manage individual days.</p>
         </div>
         <AdminLiveClock />
-      </div>
-
-      <div className="card weekly" style={{ marginBottom: 24 }}>
-        <div className="weekly-head">
-          <div>
-            <h2>Booking types</h2>
-            <p className="schedule-help">
-              Turn online or in-person booking on or off for everyone, any
-              time — booked appointments are never affected.
-            </p>
-          </div>
-        </div>
-
-        {bookingTypesLoading ? (
-          <p className="sub" style={{ marginTop: 12 }}>
-            Loading…
-          </p>
-        ) : bookingTypes ? (
-          <div className="week-row" style={{ gridTemplateColumns: "1fr 1fr" }}>
-            {(
-              [
-                { type: "online" as const, label: "Online", enabled: bookingTypes.online_enabled },
-                { type: "in_person" as const, label: "In-person", enabled: bookingTypes.in_person_enabled },
-              ]
-            ).map((row) => (
-              <button
-                key={row.type}
-                type="button"
-                className={`wd ${row.enabled ? "on" : "off"}`}
-                disabled={bookingTypesSaving !== null}
-                onClick={() => void toggleBookingType(row.type)}
-              >
-                <div className="wd-name">{row.label.toUpperCase()}</div>
-                <div className="wd-state">
-                  {bookingTypesSaving === row.type
-                    ? "Saving…"
-                    : row.enabled
-                      ? "Open — tap to close"
-                      : "Closed — tap to open"}
-                </div>
-              </button>
-            ))}
-          </div>
-        ) : null}
-
-        {bookingTypesError ? <p className="notice-err">{bookingTypesError}</p> : null}
       </div>
 
       <div className="card weekly">
@@ -823,6 +747,17 @@ export function AdminSchedulePage() {
                 />
               </label>
             ) : null}
+            <span>for</span>
+            <select
+              value={publishScope}
+              onChange={(event) => setPublishScope(event.target.value as Scope)}
+            >
+              {SCOPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               className="btn sm"
@@ -972,6 +907,8 @@ export function AdminSchedulePage() {
             {slots.map((slot) => {
               const booked = isBooked(slot.time_slot);
               const time = slotTimeLabel(slot.time_slot);
+              const scope = scopeLabel(slot);
+              const removeScope = slotRemoveScope[slot.id] ?? "both";
 
               if (booked) {
                 return (
@@ -980,15 +917,47 @@ export function AdminSchedulePage() {
                       🔒
                     </span>
                     {time}
+                    {scope ? <span className="scope-tag">{scope}</span> : null}
                     <span className="booked-tag">Booked</span>
                   </div>
                 );
               }
 
+              const removeControls = (
+                <>
+                  <select
+                    className="scope-select"
+                    aria-label={`Remove scope for ${time}`}
+                    value={removeScope}
+                    onChange={(event) =>
+                      setSlotRemoveScope((current) => ({
+                        ...current,
+                        [slot.id]: event.target.value as Scope,
+                      }))
+                    }
+                  >
+                    {SCOPE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.value === "both" ? "Remove both" : `Remove ${opt.label.toLowerCase()}`}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="x"
+                    aria-label={`Remove ${time}`}
+                    onClick={() => void deleteSlot(slot.id, removeScope)}
+                  >
+                    ×
+                  </button>
+                </>
+              );
+
               if (!slot.is_active) {
                 return (
                   <div key={slot.id} className="slot-chip inactive">
                     {time}
+                    {scope ? <span className="scope-tag">{scope}</span> : null}
                     <button
                       type="button"
                       className="reactivate"
@@ -996,14 +965,7 @@ export function AdminSchedulePage() {
                     >
                       Activate
                     </button>
-                    <button
-                      type="button"
-                      className="x"
-                      aria-label={`Remove ${time}`}
-                      onClick={() => void deleteSlot(slot.id)}
-                    >
-                      ×
-                    </button>
+                    {removeControls}
                   </div>
                 );
               }
@@ -1011,14 +973,8 @@ export function AdminSchedulePage() {
               return (
                 <div key={slot.id} className="slot-chip">
                   {time}
-                  <button
-                    type="button"
-                    className="x"
-                    aria-label={`Remove ${time}`}
-                    onClick={() => void deleteSlot(slot.id)}
-                  >
-                    ×
-                  </button>
+                  {scope ? <span className="scope-tag">{scope}</span> : null}
+                  {removeControls}
                 </div>
               );
             })}
@@ -1031,6 +987,16 @@ export function AdminSchedulePage() {
               onChange={(event) => setManualDateSlot(event.target.value)}
               className="mono"
             />
+            <select
+              value={manualSlotScope}
+              onChange={(event) => setManualSlotScope(event.target.value as Scope)}
+            >
+              {SCOPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
             <button type="button" className="btn sm" onClick={() => void addDateSlot()}>
               + Add slot
             </button>
@@ -1049,11 +1015,21 @@ export function AdminSchedulePage() {
                 <span className="hint">
                   {selectedDayWeeklyOff
                     ? "Opens this Off day once using your weekly hours"
-                    : "Reopens all blocked slots for booking"}
+                    : "Fully reopens this day for booking"}
                 </span>
               </>
             ) : (
               <>
+                <select
+                  value={blockScope}
+                  onChange={(event) => setBlockScope(event.target.value as Scope)}
+                >
+                  {SCOPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      Block {opt.value === "both" ? "both" : opt.label.toLowerCase()}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   className="btn danger sm"

@@ -12,9 +12,10 @@ import {
   serverError,
 } from "@/lib/api";
 import {
-  getSessionTypeBlockReason,
   isBookingEditable,
+  isSessionTypeAllowedOnSlot,
   isSlotSelectable,
+  sessionTypeUnavailableMessage,
 } from "@/lib/booking-window";
 import { canPatientAccessBooking, getPatientScope } from "@/lib/patient-dashboard";
 
@@ -171,19 +172,13 @@ export async function PATCH(request: Request, context: Ctx) {
       if (scope.role === "patient" && !isSlotSelectable(nextDate, nextTime)) {
         return fail("Please choose a time at least 3 hours from now.", 400);
       }
-      const doctor = await prisma.doctors.findUnique({
-        where: { id: existing.doctor_id },
-        select: { online_enabled: true, in_person_enabled: true },
-      });
-      if (!doctor) return fail("Doctor not found", 404);
-      const blockReason = getSessionTypeBlockReason(nextSession, nextDate, doctor);
-      if (blockReason) return fail(blockReason, 400);
 
       const slotChanged =
         nextDate.getTime() !== existing.date.getTime() ||
         nextTime.getTime() !== existing.time_slot.getTime();
+      const sessionChanged = nextSession !== existing.session_type;
 
-      if (slotChanged) {
+      if (slotChanged || sessionChanged) {
         const openSlot = await prisma.availability.findFirst({
           where: {
             doctor_id: existing.doctor_id,
@@ -191,12 +186,17 @@ export async function PATCH(request: Request, context: Ctx) {
             time_slot: nextTime,
             is_active: true,
           },
-          select: { id: true },
+          select: { in_person_enabled: true, online_enabled: true },
         });
         if (!openSlot) {
           return fail("That time is not available", 400);
         }
+        if (!isSessionTypeAllowedOnSlot(nextSession, openSlot)) {
+          return fail(sessionTypeUnavailableMessage(nextSession), 400);
+        }
+      }
 
+      if (slotChanged) {
         const confirmed = await prisma.bookings.findFirst({
           where: {
             doctor_id: existing.doctor_id,

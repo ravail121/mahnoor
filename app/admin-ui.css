@@ -1188,7 +1188,9 @@
 .admin-app .gen-row select,
 .admin-app .pattern-edit input,
 .admin-app .pattern-edit select,
-.admin-app .add-slot input {
+.admin-app .add-slot input,
+.admin-app .add-slot select,
+.admin-app .day-actions select {
   font-family: var(--font-inter), "Inter", sans-serif;
   font-size: 13px;
   padding: 8px 10px;
@@ -1203,7 +1205,9 @@
 .admin-app .gen-row select:focus,
 .admin-app .pattern-edit input:focus,
 .admin-app .pattern-edit select:focus,
-.admin-app .add-slot input:focus {
+.admin-app .add-slot input:focus,
+.admin-app .add-slot select:focus,
+.admin-app .day-actions select:focus {
   border-color: var(--sage-deep);
 }
 
@@ -1442,6 +1446,29 @@
   padding: 1px 7px;
   border-radius: 999px;
   font-weight: 600;
+}
+
+.admin-app .slot-chip .scope-tag {
+  font-family: var(--font-inter), "Inter", sans-serif;
+  font-size: 10px;
+  background: var(--cream-deep);
+  color: var(--muted);
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-app .slot-chip .scope-select {
+  font-family: var(--font-inter), "Inter", sans-serif;
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 7px;
+  border: 1.5px solid var(--line);
+  background: var(--white);
+  color: var(--charcoal);
+  outline: none;
+  margin-left: auto;
 }
 
 .admin-app .slot-chip .reactivate {

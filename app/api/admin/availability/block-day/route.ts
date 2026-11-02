@@ -1,13 +1,16 @@
 import { fail, ok, parseDateOnly, requireNumber, serverError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
+const SCOPES = ["in_person", "online", "both"] as const;
+
 /**
  * POST /api/admin/availability/block-day
- * Body: { doctor_id, date, action?: "block" | "unblock" }
+ * Body: { doctor_id, date, action?: "block" | "unblock", scope?: "in_person" | "online" | "both" }
  *
- * block   — deactivate all free slots for the day (confirmed bookings stay protected)
- * unblock — reactivate inactive slots; if the day has none (e.g. weekly Off),
- *           create slots from the doctor's working-day pattern
+ * block (scope "both")        — deactivate all free slots for the day (confirmed bookings stay protected)
+ * block (scope one type)      — turn that type off on free slots for the day, leaving the other type open
+ * unblock                     — fully reopen the day: reactivate slots and restore both types; if the
+ *                                day has none (e.g. weekly Off), create slots from the working-day pattern
  */
 export async function POST(request: Request) {
   try {
@@ -15,6 +18,9 @@ export async function POST(request: Request) {
     const doctorId = requireNumber(body.doctor_id, "doctor_id");
     const date = parseDateOnly(body.date);
     const action = body.action === "unblock" ? "unblock" : "block";
+    const scope: (typeof SCOPES)[number] = SCOPES.includes(body.scope)
+      ? (body.scope as (typeof SCOPES)[number])
+      : "both";
 
     if (!doctorId || !date) {
       return fail("doctor_id and date are required");
@@ -25,9 +31,8 @@ export async function POST(request: Request) {
         where: {
           doctor_id: doctorId,
           date,
-          is_active: false,
         },
-        data: { is_active: true },
+        data: { is_active: true, in_person_enabled: true, online_enabled: true },
       });
 
       const activeCount = await prisma.availability.count({
@@ -84,29 +89,40 @@ export async function POST(request: Request) {
         doctor_id: doctorId,
         date,
         status: "confirmed",
+        // Scoping to one type only needs to protect bookings of that type —
+        // an online booking doesn't block narrowing the in-person offering.
+        ...(scope === "both" ? {} : { session_type: scope }),
       },
       select: { time_slot: true },
     });
 
     const protectedTimes = confirmedBookings.map((booking) => booking.time_slot);
+    const whereClause = {
+      doctor_id: doctorId,
+      date,
+      is_active: true,
+      ...(protectedTimes.length > 0
+        ? {
+            NOT: {
+              time_slot: { in: protectedTimes },
+            },
+          }
+        : {}),
+    };
 
     const updated = await prisma.availability.updateMany({
-      where: {
-        doctor_id: doctorId,
-        date,
-        ...(protectedTimes.length > 0
-          ? {
-              NOT: {
-                time_slot: { in: protectedTimes },
-              },
-            }
-          : {}),
-      },
-      data: { is_active: false },
+      where: whereClause,
+      data:
+        scope === "both"
+          ? { is_active: false }
+          : scope === "online"
+            ? { online_enabled: false }
+            : { in_person_enabled: false },
     });
 
     return ok({
       action: "block",
+      scope,
       blocked: updated.count,
       protected_booked_slots: protectedTimes.length,
     });

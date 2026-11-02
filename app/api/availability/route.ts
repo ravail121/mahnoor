@@ -9,13 +9,14 @@ import {
   requireNumber,
   serverError,
 } from "@/lib/api";
-import { getSessionTypeBlockReason, isSlotSelectable } from "@/lib/booking-window";
+import { isSlotSelectable } from "@/lib/booking-window";
 
 const SESSION_TYPES = ["in_person", "online"] as const;
 
 /**
  * POST /api/availability
  * Body: { doctor_id, date, time_slot? } or { doctor_id, date, time_slots: string[] }
+ * Optional: in_person_enabled, online_enabled (both default true — "both")
  */
 export async function POST(request: Request) {
   try {
@@ -29,6 +30,12 @@ export async function POST(request: Request) {
 
     const doctor = await prisma.doctors.findUnique({ where: { id: doctorId } });
     if (!doctor) return fail("Doctor not found", 404);
+
+    const inPersonEnabled = body.in_person_enabled !== false;
+    const onlineEnabled = body.online_enabled !== false;
+    if (!inPersonEnabled && !onlineEnabled) {
+      return fail("Slot must be open to at least one of in-person or online");
+    }
 
     let slots: Date[] = [];
     if (Array.isArray(body.time_slots)) {
@@ -55,6 +62,8 @@ export async function POST(request: Request) {
             date,
             time_slot,
             is_active: true,
+            in_person_enabled: inPersonEnabled,
+            online_enabled: onlineEnabled,
           },
         }),
       ),
@@ -96,21 +105,12 @@ export async function GET(request: Request) {
     const date = parseDateOnly(dateRaw);
     if (!date) return fail("date must be YYYY-MM-DD");
 
+    let sessionType: (typeof SESSION_TYPES)[number] | null = null;
     if (sessionTypeRaw != null) {
       if (!SESSION_TYPES.includes(sessionTypeRaw as (typeof SESSION_TYPES)[number])) {
         return fail("session_type must be in_person or online");
       }
-      const doctor = await prisma.doctors.findUnique({
-        where: { id: doctorId },
-        select: { online_enabled: true, in_person_enabled: true },
-      });
-      if (!doctor) return fail("Doctor not found", 404);
-      const blocked = getSessionTypeBlockReason(
-        sessionTypeRaw as (typeof SESSION_TYPES)[number],
-        date,
-        doctor,
-      );
-      if (blocked) return ok([]);
+      sessionType = sessionTypeRaw as (typeof SESSION_TYPES)[number];
     }
 
     const slots = await prisma.availability.findMany({
@@ -118,6 +118,11 @@ export async function GET(request: Request) {
         doctor_id: doctorId,
         date,
         ...(availableOnly ? { is_active: true } : {}),
+        ...(sessionType === "online"
+          ? { online_enabled: true }
+          : sessionType === "in_person"
+            ? { in_person_enabled: true }
+            : {}),
       },
       orderBy: { time_slot: "asc" },
     });

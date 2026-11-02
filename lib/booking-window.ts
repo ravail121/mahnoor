@@ -1,48 +1,27 @@
 const CLINIC_TIMEZONE = "Asia/Karachi";
 export const BOOKING_LEAD_MS = 3 * 60 * 60 * 1000;
 
-/** In-person visits are closed these two weekdays; online stays open. getUTCDay(): 5 = Friday, 6 = Saturday. */
-const IN_PERSON_CLOSED_WEEKDAYS = new Set([5, 6]);
-
 function asDate(value: Date | string) {
   return value instanceof Date ? value : new Date(value);
 }
 
-/** date is stored as a UTC-encoded calendar date (see getAppointmentInstant below). */
-export function isSessionTypeAllowedOnDate(
-  sessionType: "in_person" | "online",
-  date: Date | string,
-) {
-  if (sessionType !== "in_person") return true;
-  return !IN_PERSON_CLOSED_WEEKDAYS.has(asDate(date).getUTCDay());
-}
-
-export type SessionTypeAvailability = {
-  online_enabled: boolean;
+export type SlotSessionFlags = {
   in_person_enabled: boolean;
+  online_enabled: boolean;
 };
 
-/**
- * Combines the admin's global online/in-person on-off switch with the
- * Friday/Saturday in-person rule. Returns null when the session type is
- * bookable on that date, or a user-facing reason why it isn't.
- */
-export function getSessionTypeBlockReason(
+/** Whether a specific published availability row offers this session type. */
+export function isSessionTypeAllowedOnSlot(
   sessionType: "in_person" | "online",
-  date: Date | string,
-  doctor: SessionTypeAvailability,
-): string | null {
-  const globallyEnabled =
-    sessionType === "online" ? doctor.online_enabled : doctor.in_person_enabled;
-  if (!globallyEnabled) {
-    return sessionType === "online"
-      ? "Online bookings are currently closed."
-      : "In-person bookings are currently closed.";
-  }
-  if (!isSessionTypeAllowedOnDate(sessionType, date)) {
-    return "In-person visits aren't available on Fridays or Saturdays — please choose an online session or a different day.";
-  }
-  return null;
+  slot: SlotSessionFlags,
+) {
+  return sessionType === "online" ? slot.online_enabled : slot.in_person_enabled;
+}
+
+export function sessionTypeUnavailableMessage(sessionType: "in_person" | "online") {
+  return sessionType === "online"
+    ? "Online bookings aren't available at this time."
+    : "In-person visits aren't available at this time.";
 }
 
 function partNumber(

@@ -11,7 +11,11 @@ import {
   requireString,
   serverError,
 } from "@/lib/api";
-import { getSessionTypeBlockReason, isSlotSelectable } from "@/lib/booking-window";
+import {
+  isSessionTypeAllowedOnSlot,
+  isSlotSelectable,
+  sessionTypeUnavailableMessage,
+} from "@/lib/booking-window";
 
 const SESSION_TYPES = ["in_person", "online"] as const;
 const BOOKING_FOR = ["self", "family_member"] as const;
@@ -78,12 +82,15 @@ export async function POST(request: Request) {
     if (!isSlotSelectable(date, timeSlot)) {
       return fail("Please choose a time at least 3 hours from now.", 400);
     }
-    const blockReason = getSessionTypeBlockReason(
-      sessionType as "in_person" | "online",
-      date,
-      doctor,
-    );
-    if (blockReason) return fail(blockReason, 400);
+
+    const slot = await prisma.availability.findFirst({
+      where: { doctor_id: doctorId, date, time_slot: timeSlot, is_active: true },
+      select: { in_person_enabled: true, online_enabled: true },
+    });
+    if (!slot) return fail("That time is not available", 400);
+    if (!isSessionTypeAllowedOnSlot(sessionType as "in_person" | "online", slot)) {
+      return fail(sessionTypeUnavailableMessage(sessionType as "in_person" | "online"), 400);
+    }
 
     // Double-booking guard: no confirmed booking on this slot
     const confirmed = await prisma.bookings.findFirst({

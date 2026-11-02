@@ -15,6 +15,12 @@ export async function POST(request: Request) {
       return fail("end_date must be on or after start_date");
     }
 
+    const inPersonEnabled = body.in_person_enabled !== false;
+    const onlineEnabled = body.online_enabled !== false;
+    if (!inPersonEnabled && !onlineEnabled) {
+      return fail("Slots must be open to at least one of in-person or online");
+    }
+
     const pattern = await prisma.weekly_schedule.findMany({
       where: { doctor_id: doctorId, is_active: true },
       orderBy: [{ weekday: "asc" }, { time_slot: "asc" }],
@@ -29,6 +35,8 @@ export async function POST(request: Request) {
       date: Date;
       time_slot: Date;
       is_active: boolean;
+      in_person_enabled: boolean;
+      online_enabled: boolean;
     }> = [];
 
     const cursor = new Date(startDate);
@@ -41,6 +49,8 @@ export async function POST(request: Request) {
           date: new Date(cursor),
           time_slot: entry.time_slot,
           is_active: true,
+          in_person_enabled: inPersonEnabled,
+          online_enabled: onlineEnabled,
         });
       }
       cursor.setUTCDate(cursor.getUTCDate() + 1);

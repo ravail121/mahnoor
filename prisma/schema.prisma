@@ -8,13 +8,15 @@ datasource db {
 }
 
 model availability {
-  id         Int      @id @default(autoincrement())
-  doctor_id  Int
-  date       DateTime @db.Date
-  time_slot  DateTime @db.Time(0)
-  is_active  Boolean  @default(true)
-  created_at DateTime @default(now()) @db.Timestamptz(0)
-  doctors    doctors  @relation(fields: [doctor_id], references: [id], onDelete: Cascade, map: "fk_availability_doctor")
+  id                Int      @id @default(autoincrement())
+  doctor_id         Int
+  date              DateTime @db.Date
+  time_slot         DateTime @db.Time(0)
+  is_active         Boolean  @default(true)
+  in_person_enabled Boolean  @default(true)
+  online_enabled    Boolean  @default(true)
+  created_at        DateTime @default(now()) @db.Timestamptz(0)
+  doctors           doctors  @relation(fields: [doctor_id], references: [id], onDelete: Cascade, map: "fk_availability_doctor")
 
   @@unique([doctor_id, date, time_slot], map: "uq_availability_doctor_date_time")
   @@index([date], map: "idx_availability_date")
@@ -46,12 +48,10 @@ model bookings {
 }
 
 model doctors {
-  id                Int               @id @default(autoincrement())
-  name              String            @db.VarChar(150)
-  specialty         String            @db.VarChar(150)
-  online_enabled    Boolean           @default(true)
-  in_person_enabled Boolean           @default(true)
-  created_at        DateTime          @default(now()) @db.Timestamptz(0)
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(150)
+  specialty       String            @db.VarChar(150)
+  created_at      DateTime          @default(now()) @db.Timestamptz(0)
   availability    availability[]
   bookings        bookings[]
   users           users[]
