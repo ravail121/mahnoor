@@ -30,45 +30,73 @@ export async function POST(request: Request) {
       return fail("No active weekly schedule found to generate from");
     }
 
-    const createData: Array<{
-      doctor_id: number;
-      date: Date;
-      time_slot: Date;
-      is_active: boolean;
-      in_person_enabled: boolean;
-      online_enabled: boolean;
-    }> = [];
+    const confirmedBookings = await prisma.bookings.findMany({
+      where: {
+        doctor_id: doctorId,
+        date: { gte: startDate, lte: endDate },
+        status: "confirmed",
+      },
+      select: { date: true, time_slot: true },
+    });
+    const protectedSlots = new Set(
+      confirmedBookings.map(
+        (b) => `${b.date.toISOString()}|${b.time_slot.toISOString()}`,
+      ),
+    );
 
+    const slotsToPublish: Array<{ date: Date; time_slot: Date }> = [];
     const cursor = new Date(startDate);
     while (cursor <= endDate) {
       const weekday = cursor.getUTCDay();
       const matching = pattern.filter((entry) => entry.weekday === weekday);
       for (const entry of matching) {
-        createData.push({
-          doctor_id: doctorId,
-          date: new Date(cursor),
-          time_slot: entry.time_slot,
-          is_active: true,
-          in_person_enabled: inPersonEnabled,
-          online_enabled: onlineEnabled,
-        });
+        slotsToPublish.push({ date: new Date(cursor), time_slot: entry.time_slot });
       }
       cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
 
-    if (createData.length === 0) {
+    if (slotsToPublish.length === 0) {
       return created({ count: 0, message: "No slots matched that date range" });
     }
 
-    const result = await prisma.availability.createMany({
-      data: createData,
-      skipDuplicates: true,
-    });
+    // Republishing overrides whatever was there before (scope, and
+    // reactivates anything blocked) — except slots with a confirmed booking,
+    // which are left untouched so this can never disrupt an existing
+    // appointment.
+    const publishable = slotsToPublish.filter(
+      ({ date, time_slot }) =>
+        !protectedSlots.has(`${date.toISOString()}|${time_slot.toISOString()}`),
+    );
+    const protectedCount = slotsToPublish.length - publishable.length;
+
+    if (publishable.length > 0) {
+      await prisma.$transaction(
+        publishable.map(({ date, time_slot }) =>
+          prisma.availability.upsert({
+            where: { doctor_id_date_time_slot: { doctor_id: doctorId, date, time_slot } },
+            create: {
+              doctor_id: doctorId,
+              date,
+              time_slot,
+              is_active: true,
+              in_person_enabled: inPersonEnabled,
+              online_enabled: onlineEnabled,
+            },
+            update: {
+              is_active: true,
+              in_person_enabled: inPersonEnabled,
+              online_enabled: onlineEnabled,
+            },
+          }),
+        ),
+      );
+    }
 
     return created({
-      count: result.count,
+      count: publishable.length,
+      protected_booked_slots: protectedCount,
       generated_from_pattern: pattern.length,
-      days_covered: createData.length,
+      days_covered: slotsToPublish.length,
     });
   } catch (err) {
     return serverError(err);

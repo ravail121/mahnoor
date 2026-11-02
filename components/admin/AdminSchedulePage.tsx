@@ -413,13 +413,18 @@ export function AdminSchedulePage() {
         }),
       });
       const payload = (await response.json()) as
-        | ApiSuccess<{ count: number; message?: string }>
+        | ApiSuccess<{ count: number; protected_booked_slots?: number; message?: string }>
         | ApiFailure;
       const result = parsePayload(payload);
+      const protectedCount = result.protected_booked_slots ?? 0;
       setGenerateNotice(
         result.count > 0
-          ? `Published ${result.count} new bookable slots through ${endDate}.`
-          : "No new slots were added. This period may already be published.",
+          ? `Published ${result.count} slot(s) through ${endDate}.${
+              protectedCount > 0
+                ? ` ${protectedCount} booked slot(s) were left untouched.`
+                : ""
+            }`
+          : "No slots matched that date range.",
       );
       await loadDayView(selectedDate);
       await loadMonthSummary(visibleMonth);
@@ -769,8 +774,8 @@ export function AdminSchedulePage() {
           </div>
           <p className="publish-hint">
             {generateStart && getPublishEndDate()
-              ? `Slots will be created from ${generateStart} to ${getPublishEndDate()}. Existing slots and booked appointments are never duplicated or overwritten.`
-              : "Existing slots and booked appointments are never duplicated or overwritten."}
+              ? `Slots will be created or updated from ${generateStart} to ${getPublishEndDate()} to match the scope you choose. Booked appointments are never touched.`
+              : "Publishing overrides existing slots in the range to match the scope you choose. Booked appointments are never touched."}
           </p>
           {generateNotice ? (
             <p className="notice-ok">{generateNotice}</p>
