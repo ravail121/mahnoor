@@ -92,8 +92,33 @@ export async function POST(request: Request) {
       );
     }
 
+    // Anything already published in this range that the current pattern no
+    // longer generates (e.g. a leftover 30-minute slot after switching to a
+    // 45-minute interval, or a day now marked Off) is stale — remove it so
+    // the range actually matches the pattern, same booked-slot protection.
+    const patternKeys = new Set(
+      slotsToPublish.map(
+        ({ date, time_slot }) => `${date.toISOString()}|${time_slot.toISOString()}`,
+      ),
+    );
+    const existingInRange = await prisma.availability.findMany({
+      where: { doctor_id: doctorId, date: { gte: startDate, lte: endDate } },
+      select: { id: true, date: true, time_slot: true },
+    });
+    const staleIds = existingInRange
+      .filter(({ date, time_slot }) => {
+        const key = `${date.toISOString()}|${time_slot.toISOString()}`;
+        return !patternKeys.has(key) && !protectedSlots.has(key);
+      })
+      .map((row) => row.id);
+
+    if (staleIds.length > 0) {
+      await prisma.availability.deleteMany({ where: { id: { in: staleIds } } });
+    }
+
     return created({
       count: publishable.length,
+      removed_stale_slots: staleIds.length,
       protected_booked_slots: protectedCount,
       generated_from_pattern: pattern.length,
       days_covered: slotsToPublish.length,

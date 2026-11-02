@@ -413,17 +413,25 @@ export function AdminSchedulePage() {
         }),
       });
       const payload = (await response.json()) as
-        | ApiSuccess<{ count: number; protected_booked_slots?: number; message?: string }>
+        | ApiSuccess<{
+            count: number;
+            removed_stale_slots?: number;
+            protected_booked_slots?: number;
+            message?: string;
+          }>
         | ApiFailure;
       const result = parsePayload(payload);
       const protectedCount = result.protected_booked_slots ?? 0;
+      const removedCount = result.removed_stale_slots ?? 0;
       setGenerateNotice(
-        result.count > 0
-          ? `Published ${result.count} slot(s) through ${endDate}.${
-              protectedCount > 0
+        result.count > 0 || removedCount > 0
+          ? `Published ${result.count} slot(s) through ${endDate}.` +
+              (removedCount > 0
+                ? ` Removed ${removedCount} old slot(s) no longer in the pattern.`
+                : "") +
+              (protectedCount > 0
                 ? ` ${protectedCount} booked slot(s) were left untouched.`
-                : ""
-            }`
+                : "")
           : "No slots matched that date range.",
       );
       await loadDayView(selectedDate);
@@ -774,8 +782,8 @@ export function AdminSchedulePage() {
           </div>
           <p className="publish-hint">
             {generateStart && getPublishEndDate()
-              ? `Slots will be created or updated from ${generateStart} to ${getPublishEndDate()} to match the scope you choose. Booked appointments are never touched.`
-              : "Publishing overrides existing slots in the range to match the scope you choose. Booked appointments are never touched."}
+              ? `The range ${generateStart} to ${getPublishEndDate()} will be made to exactly match your working days and hours above — old slots outside the current pattern are removed. Booked appointments are never touched.`
+              : "Publishing makes the range exactly match your working days and hours — old slots outside the current pattern are removed. Booked appointments are never touched."}
           </p>
           {generateNotice ? (
             <p className="notice-ok">{generateNotice}</p>
