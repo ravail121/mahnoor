@@ -46,10 +46,12 @@ model bookings {
 }
 
 model doctors {
-  id              Int               @id @default(autoincrement())
-  name            String            @db.VarChar(150)
-  specialty       String            @db.VarChar(150)
-  created_at      DateTime          @default(now()) @db.Timestamptz(0)
+  id                Int               @id @default(autoincrement())
+  name              String            @db.VarChar(150)
+  specialty         String            @db.VarChar(150)
+  online_enabled    Boolean           @default(true)
+  in_person_enabled Boolean           @default(true)
+  created_at        DateTime          @default(now()) @db.Timestamptz(0)
   availability    availability[]
   bookings        bookings[]
   users           users[]

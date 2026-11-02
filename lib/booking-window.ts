@@ -17,6 +17,34 @@ export function isSessionTypeAllowedOnDate(
   return !IN_PERSON_CLOSED_WEEKDAYS.has(asDate(date).getUTCDay());
 }
 
+export type SessionTypeAvailability = {
+  online_enabled: boolean;
+  in_person_enabled: boolean;
+};
+
+/**
+ * Combines the admin's global online/in-person on-off switch with the
+ * Friday/Saturday in-person rule. Returns null when the session type is
+ * bookable on that date, or a user-facing reason why it isn't.
+ */
+export function getSessionTypeBlockReason(
+  sessionType: "in_person" | "online",
+  date: Date | string,
+  doctor: SessionTypeAvailability,
+): string | null {
+  const globallyEnabled =
+    sessionType === "online" ? doctor.online_enabled : doctor.in_person_enabled;
+  if (!globallyEnabled) {
+    return sessionType === "online"
+      ? "Online bookings are currently closed."
+      : "In-person bookings are currently closed.";
+  }
+  if (!isSessionTypeAllowedOnDate(sessionType, date)) {
+    return "In-person visits aren't available on Fridays or Saturdays — please choose an online session or a different day.";
+  }
+  return null;
+}
+
 function partNumber(
   parts: Intl.DateTimeFormatPart[],
   type: Intl.DateTimeFormatPartTypes,

@@ -12,8 +12,8 @@ import {
   serverError,
 } from "@/lib/api";
 import {
+  getSessionTypeBlockReason,
   isBookingEditable,
-  isSessionTypeAllowedOnDate,
   isSlotSelectable,
 } from "@/lib/booking-window";
 import { canPatientAccessBooking, getPatientScope } from "@/lib/patient-dashboard";
@@ -171,12 +171,13 @@ export async function PATCH(request: Request, context: Ctx) {
       if (scope.role === "patient" && !isSlotSelectable(nextDate, nextTime)) {
         return fail("Please choose a time at least 3 hours from now.", 400);
       }
-      if (!isSessionTypeAllowedOnDate(nextSession, nextDate)) {
-        return fail(
-          "In-person visits aren't available on Fridays or Saturdays — please choose an online session or a different day.",
-          400,
-        );
-      }
+      const doctor = await prisma.doctors.findUnique({
+        where: { id: existing.doctor_id },
+        select: { online_enabled: true, in_person_enabled: true },
+      });
+      if (!doctor) return fail("Doctor not found", 404);
+      const blockReason = getSessionTypeBlockReason(nextSession, nextDate, doctor);
+      if (blockReason) return fail(blockReason, 400);
 
       const slotChanged =
         nextDate.getTime() !== existing.date.getTime() ||

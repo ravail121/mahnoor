@@ -9,7 +9,7 @@ import {
   requireNumber,
   serverError,
 } from "@/lib/api";
-import { isSessionTypeAllowedOnDate, isSlotSelectable } from "@/lib/booking-window";
+import { getSessionTypeBlockReason, isSlotSelectable } from "@/lib/booking-window";
 
 const SESSION_TYPES = ["in_person", "online"] as const;
 
@@ -100,14 +100,17 @@ export async function GET(request: Request) {
       if (!SESSION_TYPES.includes(sessionTypeRaw as (typeof SESSION_TYPES)[number])) {
         return fail("session_type must be in_person or online");
       }
-      if (
-        !isSessionTypeAllowedOnDate(
-          sessionTypeRaw as (typeof SESSION_TYPES)[number],
-          date,
-        )
-      ) {
-        return ok([]);
-      }
+      const doctor = await prisma.doctors.findUnique({
+        where: { id: doctorId },
+        select: { online_enabled: true, in_person_enabled: true },
+      });
+      if (!doctor) return fail("Doctor not found", 404);
+      const blocked = getSessionTypeBlockReason(
+        sessionTypeRaw as (typeof SESSION_TYPES)[number],
+        date,
+        doctor,
+      );
+      if (blocked) return ok([]);
     }
 
     const slots = await prisma.availability.findMany({
