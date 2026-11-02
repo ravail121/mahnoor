@@ -11,7 +11,11 @@ import {
   requireString,
   serverError,
 } from "@/lib/api";
-import { isBookingEditable, isSlotSelectable } from "@/lib/booking-window";
+import {
+  isBookingEditable,
+  isSessionTypeAllowedOnDate,
+  isSlotSelectable,
+} from "@/lib/booking-window";
 import { canPatientAccessBooking, getPatientScope } from "@/lib/patient-dashboard";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -166,6 +170,12 @@ export async function PATCH(request: Request, context: Ctx) {
 
       if (scope.role === "patient" && !isSlotSelectable(nextDate, nextTime)) {
         return fail("Please choose a time at least 3 hours from now.", 400);
+      }
+      if (!isSessionTypeAllowedOnDate(nextSession, nextDate)) {
+        return fail(
+          "In-person visits aren't available on Fridays or Saturdays — please choose an online session or a different day.",
+          400,
+        );
       }
 
       const slotChanged =

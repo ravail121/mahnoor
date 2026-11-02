@@ -11,7 +11,7 @@ import {
   requireString,
   serverError,
 } from "@/lib/api";
-import { isSlotSelectable } from "@/lib/booking-window";
+import { isSessionTypeAllowedOnDate, isSlotSelectable } from "@/lib/booking-window";
 
 const SESSION_TYPES = ["in_person", "online"] as const;
 const BOOKING_FOR = ["self", "family_member"] as const;
@@ -77,6 +77,9 @@ export async function POST(request: Request) {
 
     if (!isSlotSelectable(date, timeSlot)) {
       return fail("Please choose a time at least 3 hours from now.", 400);
+    }
+    if (!isSessionTypeAllowedOnDate(sessionType as "in_person" | "online", date)) {
+      return fail("In-person visits aren't available on Fridays or Saturdays — please choose an online session or a different day.", 400);
     }
 
     // Double-booking guard: no confirmed booking on this slot

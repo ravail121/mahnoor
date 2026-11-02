@@ -7,6 +7,7 @@ import {
   fetchAvailability,
   formatApiTime,
   formatDisplayDate,
+  mapSessionType,
   toIsoDate,
 } from "@/lib/booking-api";
 
@@ -31,6 +32,7 @@ function monthLabel(year: number, month: number) {
 }
 
 export function DateTimeStep({
+  sessionType,
   selectedDate,
   selectedTime,
   onSelectDate,
@@ -93,7 +95,9 @@ export function DateTimeStep({
     setLoading(true);
     setError(null);
 
-    fetchAvailability(selectedDate)
+    fetchAvailability(selectedDate, {
+      sessionType: sessionType ? mapSessionType(sessionType) : undefined,
+    })
       .then((data) => {
         if (cancelled) return;
         setSlots(
@@ -115,7 +119,7 @@ export function DateTimeStep({
     return () => {
       cancelled = true;
     };
-  }, [selectedDate]);
+  }, [selectedDate, sessionType]);
 
   function shiftMonth(delta: number) {
     const next = new Date(viewYear, viewMonth + delta, 1);

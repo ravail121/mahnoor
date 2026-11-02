@@ -123,7 +123,11 @@ export function mapSessionType(value: SessionType): "in_person" | "online" {
 
 export function fetchAvailability(
   date: string,
-  options?: { doctorId?: number; excludeBookingId?: number },
+  options?: {
+    doctorId?: number;
+    excludeBookingId?: number;
+    sessionType?: "in_person" | "online";
+  },
 ) {
   const q = new URLSearchParams({
     doctor_id: String(options?.doctorId ?? DOCTOR_ID),
@@ -132,6 +136,9 @@ export function fetchAvailability(
   });
   if (options?.excludeBookingId) {
     q.set("exclude_booking_id", String(options.excludeBookingId));
+  }
+  if (options?.sessionType) {
+    q.set("session_type", options.sessionType);
   }
   return request<AvailabilitySlot[]>(`/api/availability?${q}`);
 }

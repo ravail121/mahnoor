@@ -54,7 +54,7 @@ export function AdminBookingActions({
     if (!rescheduling || !date) return;
     let cancelled = false;
     setLoadingSlots(true);
-    fetchAvailability(date, { doctorId, excludeBookingId: bookingId })
+    fetchAvailability(date, { doctorId, excludeBookingId: bookingId, sessionType })
       .then((data) => {
         if (cancelled) return;
         const next = data.map((slot) => ({
@@ -79,7 +79,7 @@ export function AdminBookingActions({
     return () => {
       cancelled = true;
     };
-  }, [rescheduling, date, doctorId, bookingId, initialDate, initialTime]);
+  }, [rescheduling, date, doctorId, bookingId, initialDate, initialTime, sessionType]);
 
   async function updateStatus(nextStatus: BookingStatus) {
     setLoading(nextStatus);

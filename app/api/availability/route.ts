@@ -9,7 +9,9 @@ import {
   requireNumber,
   serverError,
 } from "@/lib/api";
-import { isSlotSelectable } from "@/lib/booking-window";
+import { isSessionTypeAllowedOnDate, isSlotSelectable } from "@/lib/booking-window";
+
+const SESSION_TYPES = ["in_person", "online"] as const;
 
 /**
  * POST /api/availability
@@ -85,6 +87,7 @@ export async function GET(request: Request) {
     const excludeBookingId = parseId(
       searchParams.get("exclude_booking_id") ?? "",
     );
+    const sessionTypeRaw = searchParams.get("session_type");
 
     if (!doctorId || !dateRaw) {
       return fail("Query params doctor_id and date are required");
@@ -92,6 +95,20 @@ export async function GET(request: Request) {
 
     const date = parseDateOnly(dateRaw);
     if (!date) return fail("date must be YYYY-MM-DD");
+
+    if (sessionTypeRaw != null) {
+      if (!SESSION_TYPES.includes(sessionTypeRaw as (typeof SESSION_TYPES)[number])) {
+        return fail("session_type must be in_person or online");
+      }
+      if (
+        !isSessionTypeAllowedOnDate(
+          sessionTypeRaw as (typeof SESSION_TYPES)[number],
+          date,
+        )
+      ) {
+        return ok([]);
+      }
+    }
 
     const slots = await prisma.availability.findMany({
       where: {

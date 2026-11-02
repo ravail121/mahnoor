@@ -1,8 +1,20 @@
 const CLINIC_TIMEZONE = "Asia/Karachi";
 export const BOOKING_LEAD_MS = 3 * 60 * 60 * 1000;
 
+/** In-person visits are closed these two weekdays; online stays open. getUTCDay(): 5 = Friday, 6 = Saturday. */
+const IN_PERSON_CLOSED_WEEKDAYS = new Set([5, 6]);
+
 function asDate(value: Date | string) {
   return value instanceof Date ? value : new Date(value);
+}
+
+/** date is stored as a UTC-encoded calendar date (see getAppointmentInstant below). */
+export function isSessionTypeAllowedOnDate(
+  sessionType: "in_person" | "online",
+  date: Date | string,
+) {
+  if (sessionType !== "in_person") return true;
+  return !IN_PERSON_CLOSED_WEEKDAYS.has(asDate(date).getUTCDay());
 }
 
 function partNumber(
