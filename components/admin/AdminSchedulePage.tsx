@@ -416,6 +416,7 @@ export function AdminSchedulePage() {
         | ApiSuccess<{
             count: number;
             removed_stale_slots?: number;
+            narrowed_slots?: number;
             protected_booked_slots?: number;
             message?: string;
           }>
@@ -423,11 +424,15 @@ export function AdminSchedulePage() {
       const result = parsePayload(payload);
       const protectedCount = result.protected_booked_slots ?? 0;
       const removedCount = result.removed_stale_slots ?? 0;
+      const narrowedCount = result.narrowed_slots ?? 0;
       setGenerateNotice(
-        result.count > 0 || removedCount > 0
+        result.count > 0
           ? `Published ${result.count} slot(s) through ${endDate}.` +
               (removedCount > 0
-                ? ` Removed ${removedCount} old slot(s) no longer in the pattern.`
+                ? ` Removed ${removedCount} old slot(s) outside this pattern.`
+                : "") +
+              (narrowedCount > 0
+                ? ` Updated ${narrowedCount} slot(s) elsewhere to drop this type.`
                 : "") +
               (protectedCount > 0
                 ? ` ${protectedCount} booked slot(s) were left untouched.`
@@ -782,8 +787,8 @@ export function AdminSchedulePage() {
           </div>
           <p className="publish-hint">
             {generateStart && getPublishEndDate()
-              ? `Working days above will be made to exactly match these hours/scope from ${generateStart} to ${getPublishEndDate()} (old slots at other times on those same days are removed). Off days and booked appointments are never touched.`
-              : "Working days above are made to exactly match these hours/scope (old slots at other times on those same days are removed). Off days and booked appointments are never touched."}
+              ? `Onsite and online are independent: publishing "${SCOPE_OPTIONS.find((o) => o.value === publishScope)?.label}" from ${generateStart} to ${getPublishEndDate()} sets that type on the working days above, and clears that same type everywhere else in the range — the other type is never touched, anywhere. Booked appointments are always protected.`
+              : "Onsite and online are independent — publishing one type sets it on your working days and clears it everywhere else in the range, without ever touching the other type. Booked appointments are always protected."}
           </p>
           {generateNotice ? (
             <p className="notice-ok">{generateNotice}</p>
