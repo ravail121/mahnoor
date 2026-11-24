@@ -782,8 +782,8 @@ export function AdminSchedulePage() {
           </div>
           <p className="publish-hint">
             {generateStart && getPublishEndDate()
-              ? `The range ${generateStart} to ${getPublishEndDate()} will be made to exactly match your working days and hours above — old slots outside the current pattern are removed. Booked appointments are never touched.`
-              : "Publishing makes the range exactly match your working days and hours — old slots outside the current pattern are removed. Booked appointments are never touched."}
+              ? `Working days above will be made to exactly match these hours/scope from ${generateStart} to ${getPublishEndDate()} (old slots at other times on those same days are removed). Off days and booked appointments are never touched.`
+              : "Working days above are made to exactly match these hours/scope (old slots at other times on those same days are removed). Off days and booked appointments are never touched."}
           </p>
           {generateNotice ? (
             <p className="notice-ok">{generateNotice}</p>

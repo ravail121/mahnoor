@@ -92,10 +92,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Anything already published in this range that the current pattern no
-    // longer generates (e.g. a leftover 30-minute slot after switching to a
-    // 45-minute interval, or a day now marked Off) is stale — remove it so
-    // the range actually matches the pattern, same booked-slot protection.
+    // Anything already published in this range, on a weekday the current
+    // pattern still covers, that the pattern no longer generates (e.g. a
+    // leftover 30-minute slot after switching to 45 minutes) is stale —
+    // remove it so that weekday actually matches the pattern. Weekdays
+    // the pattern doesn't cover at all (Off, or simply not part of this
+    // publish) are left completely alone — publishing Mon/Tue/Thu must
+    // never touch Wed/Fri's slots from an earlier, separate publish.
+    const activeWeekdays = new Set(pattern.map((entry) => entry.weekday));
     const patternKeys = new Set(
       slotsToPublish.map(
         ({ date, time_slot }) => `${date.toISOString()}|${time_slot.toISOString()}`,
@@ -107,6 +111,7 @@ export async function POST(request: Request) {
     });
     const staleIds = existingInRange
       .filter(({ date, time_slot }) => {
+        if (!activeWeekdays.has(date.getUTCDay())) return false;
         const key = `${date.toISOString()}|${time_slot.toISOString()}`;
         return !patternKeys.has(key) && !protectedSlots.has(key);
       })
