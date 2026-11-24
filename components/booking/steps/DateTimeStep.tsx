@@ -5,6 +5,7 @@ import type { SessionType } from "@/lib/booking";
 import {
   apiTimeToHHMM,
   fetchAvailability,
+  fetchMonthSummary,
   formatApiTime,
   formatDisplayDate,
   mapSessionType,
@@ -46,6 +47,7 @@ export function DateTimeStep({
   const [slots, setSlots] = useState<{ hhmm: string; label: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [datesWithSlots, setDatesWithSlots] = useState<Set<string> | null>(null);
 
   const days = useMemo(() => {
     const firstDow = new Date(viewYear, viewMonth, 1).getDay();
@@ -55,12 +57,13 @@ export function DateTimeStep({
       day: number | null;
       past: boolean;
       off: boolean;
+      noSlots: boolean;
       isToday: boolean;
       iso: string;
     }[] = [];
 
     for (let i = 0; i < offset; i++) {
-      cells.push({ day: null, past: true, off: true, isToday: false, iso: "" });
+      cells.push({ day: null, past: true, off: true, noSlots: false, isToday: false, iso: "" });
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
@@ -72,17 +75,41 @@ export function DateTimeStep({
         date.getFullYear() === today.getFullYear() &&
         date.getMonth() === today.getMonth() &&
         date.getDate() === today.getDate();
+      const iso = toIsoDate(viewYear, viewMonth, d);
       cells.push({
         day: d,
         past: isPast,
         off: isSunday,
+        noSlots: datesWithSlots !== null && !datesWithSlots.has(iso),
         isToday,
-        iso: toIsoDate(viewYear, viewMonth, d),
+        iso,
       });
     }
     return cells;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewYear, viewMonth]);
+  }, [viewYear, viewMonth, datesWithSlots]);
+
+  useEffect(() => {
+    if (!sessionType) {
+      setDatesWithSlots(null);
+      return;
+    }
+
+    let cancelled = false;
+    fetchMonthSummary(viewYear, viewMonth, mapSessionType(sessionType))
+      .then((dates) => {
+        if (!cancelled) setDatesWithSlots(new Set(dates));
+      })
+      .catch(() => {
+        // If this lookup fails, fall back to not restricting any day rather
+        // than accidentally graying out a month that's actually bookable.
+        if (!cancelled) setDatesWithSlots(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [viewYear, viewMonth, sessionType]);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -163,11 +190,11 @@ export function DateTimeStep({
         ))}
         {days.map((cell, i) => {
           if (cell.day === null) return <div key={`empty-${i}`} />;
-          const disabled = cell.past || cell.off;
+          const disabled = cell.past || cell.off || cell.noSlots;
           const classes = [
             "day",
             cell.past ? "past" : "",
-            cell.off ? "off" : "",
+            cell.off || cell.noSlots ? "off" : "",
             cell.isToday ? "today" : "",
             selectedDate === cell.iso ? "selected" : "",
           ]

@@ -121,6 +121,21 @@ export function mapSessionType(value: SessionType): "in_person" | "online" {
   return value === "online" ? "online" : "in_person";
 }
 
+export function fetchMonthSummary(
+  year: number,
+  month: number,
+  sessionType: "in_person" | "online",
+  doctorId: number = DOCTOR_ID,
+) {
+  const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const q = new URLSearchParams({
+    doctor_id: String(doctorId),
+    month: monthKey,
+    session_type: sessionType,
+  });
+  return request<string[]>(`/api/availability/month-summary?${q}`);
+}
+
 export function fetchAvailability(
   date: string,
   options?: {
